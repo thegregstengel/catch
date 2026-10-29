@@ -6,6 +6,12 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.10.29.3-beta.1]
+
+### Removed
+
+- Amazon Music is no longer on the home grid. Music is easier from a phone.
+
 ## [2026.10.29.2]
 
 Everything in 2026.10.29.2-beta.1.

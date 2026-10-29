@@ -142,7 +142,7 @@ To install streaming apps, open **Aurora Store** from the wizard or from Catch
 Settings. The tablet has no Google Play, and Aurora Store installs Play apps
 without it. Download Aurora Store from [auroraoss.com](https://auroraoss.com/) if
 it isn't on the tablet yet. Anonymous sign-in works for Netflix, Plex,
-Paramount+, Disney+, and Amazon Music.
+Paramount+, and Disney+.
 
 ## Updates
 

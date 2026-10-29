@@ -59,10 +59,9 @@ Screens from the current build, captured on a Hydrow tablet with a demo family.
 - **Live rower metrics.** Power, calories, split, average split, stroke rate,
   strokes, elapsed time, and distance against your session goal, read straight
   from the Hydrow brake about 100 times a second. Set the resistance from Catch.
-- **Watch while you row.** Netflix, Plex, Paramount+, Disney+, and Amazon Music
-  open inside the Catch frame with touch and Back working, so the metrics and
-  the family board stay on screen. Aurora Store installs the apps without
-  Google Play.
+- **Watch while you row.** Netflix, Plex, Paramount+, and Disney+ open inside
+  the Catch frame with touch and Back working, so the metrics and the family
+  board stay on screen. Aurora Store installs the apps without Google Play.
 - **Family profiles.** Everyone picks themselves on the "Who is rowing?" screen.
   Each profile keeps its own history, badges, and Bluetooth devices.
 - **Heart rate.** Pair a Bluetooth heart rate strap once and Catch connects it
@@ -143,5 +142,5 @@ MIT. See [LICENSE](LICENSE).
 
 Hydrow is a trademark of Hydrow, Inc. Catch is an independent project and is
 not affiliated with, endorsed by, or supported by Hydrow. Rooting your rower is
-at your own risk. Netflix, Plex, Paramount+, Disney+, and Amazon Music are
+at your own risk. Netflix, Plex, Paramount+, and Disney+ are
 trademarks of their respective owners.

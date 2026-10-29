@@ -26,11 +26,6 @@ object StreamingApps {
             ),
         ),
         StreamingApp("disney", "Disney+", listOf("com.disney.disneyplus")),
-        StreamingApp(
-            "amazon_music",
-            "Amazon Music",
-            listOf("com.amazon.mp3", "com.amazon.bueller.music"),
-        ),
     )
 
     /** Snapshot of which day-one apps are installed (by StreamingApp.id). */

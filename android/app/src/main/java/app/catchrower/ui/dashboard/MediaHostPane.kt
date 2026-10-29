@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Movie
-import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Shop
 import androidx.compose.material3.Icon
@@ -160,11 +159,7 @@ private fun AppTile(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
-                imageVector = when {
-                    app.id == "amazon_music" -> Icons.Outlined.MusicNote
-                    !installed -> Icons.Outlined.Shop
-                    else -> Icons.Outlined.Movie
-                },
+                imageVector = if (installed) Icons.Outlined.Movie else Icons.Outlined.Shop,
                 contentDescription = null,
                 tint = CatchAccent,
                 modifier = Modifier.size(36.dp),
