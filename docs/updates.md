@@ -46,12 +46,17 @@ so every build installs over the one before: `2026.10.29-beta.1` is 261029101,
 
 ## Cut a release
 
-1. Move the notes under `## [Unreleased]` in [`CHANGELOG.md`](../CHANGELOG.md) to a
-   new `## [2026.10.29]` heading, and commit. If the release needs a new module,
-   start its notes with **Module update required**.
-1. Tag and push:
+`main` only accepts squash-merged pull requests that pass CI; nobody can push
+to it directly or force-push it.
+
+1. On a branch, move the notes under `## [Unreleased]` in
+   [`CHANGELOG.md`](../CHANGELOG.md) to a new `## [2026.10.29]` heading. If the
+   release needs a new module, start its notes with **Module update required**.
+1. Open a pull request, wait for CI, and squash-merge it.
+1. Tag the merged commit on `main` and push the tag:
 
    ```bash
+   git switch main && git pull
    git tag v2026.10.29
    git push origin v2026.10.29
    ```
