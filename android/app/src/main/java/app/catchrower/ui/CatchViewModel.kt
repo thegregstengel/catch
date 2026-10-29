@@ -535,25 +535,30 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     /** Checks at most once a day on its own; [checkForUpdate] always checks. */
     fun checkForUpdateIfDue() {
         if (System.currentTimeMillis() - updatePrefs.lastCheckEpochMs < UPDATE_CHECK_INTERVAL_MS) return
-        if (_updateState.value !is UpdateState.Idle) return
+        val state = _updateState.value
+        if (state !is UpdateState.Idle && state !is UpdateState.Updated) return
         checkForUpdate(quiet = true)
     }
 
     fun checkForUpdate(quiet: Boolean = false) {
         viewModelScope.launch {
-            if (!quiet) _updateState.value = UpdateState.Checking
+            if (!quiet) {
+                updatePrefs.updatedTo = null
+                _updateState.value = UpdateState.Checking
+            }
+            val before = _updateState.value
             _updateState.value = runCatching { UpdateChecker.latest(_updateChannel.value) }
                 .fold(
                     onSuccess = { release ->
                         updatePrefs.lastCheckEpochMs = System.currentTimeMillis()
                         when {
                             release != null -> UpdateState.Available(release)
-                            quiet -> UpdateState.Idle
+                            quiet -> before.takeIf { it is UpdateState.Updated } ?: UpdateState.Idle
                             else -> UpdateState.UpToDate
                         }
                     },
                     onFailure = {
-                        if (quiet) UpdateState.Idle else UpdateState.Failed("Could not reach GitHub. Check the Wi-Fi connection.")
+                        if (quiet) before else UpdateState.Failed("Could not reach GitHub. Check the Wi-Fi connection.")
                     },
                 )
         }
@@ -591,6 +596,9 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         val previous = updatePrefs.lastRunVersion
         updatePrefs.lastRunVersion = BuildConfig.VERSION_NAME
         if (previous != null && previous != BuildConfig.VERSION_NAME) {
+            updatePrefs.updatedTo = BuildConfig.VERSION_NAME
+        }
+        if (updatePrefs.updatedTo == BuildConfig.VERSION_NAME) {
             _updateState.value = UpdateState.Updated(BuildConfig.VERSION_NAME)
         }
     }

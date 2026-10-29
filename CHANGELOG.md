@@ -6,6 +6,14 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.10.29.2-beta.1]
+
+### Fixed
+
+- Catch Settings keeps saying "Updated to" the new version after an update,
+  even if Catch was reopened, until you check for updates again.
+- Release notes in Catch Settings read as paragraphs instead of short lines.
+
 ## [2026.10.29]
 
 The first stable release of Catch. It contains everything in 2026.10.29-beta.1,

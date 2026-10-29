@@ -107,13 +107,36 @@ private fun ReleaseSummary(title: String, notes: String) {
     Text(title, style = MaterialTheme.typography.titleMedium, color = CatchAccent)
     if (notes.isNotBlank()) {
         Text(
-            notes.lineSequence()
-                .map { it.trim().removePrefix("#").removePrefix("- ").removePrefix("* ").trim() }
-                .filter { it.isNotEmpty() }
-                .joinToString("\n"),
+            plainNotes(notes),
             color = CatchTextSecondary,
             maxLines = 8,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
+
+/** Changelog Markdown as plain text: wrapped lines rejoined, headings and bullets kept on their own lines. */
+internal fun plainNotes(markdown: String): String = buildString {
+    fun newLine() {
+        if (isNotEmpty() && !endsWith("\n")) append("\n")
+    }
+    for (line in markdown.lineSequence().map { it.trim() }) {
+        when {
+            line.isEmpty() -> newLine()
+            line.startsWith("#") -> {
+                newLine()
+                append(line.trimStart('#').trim())
+                append("\n")
+            }
+            line.startsWith("- ") || line.startsWith("* ") -> {
+                newLine()
+                append("• ")
+                append(line.drop(2))
+            }
+            else -> {
+                if (isNotEmpty() && !endsWith("\n")) append(" ")
+                append(line)
+            }
+        }
+    }
+}.trim()
