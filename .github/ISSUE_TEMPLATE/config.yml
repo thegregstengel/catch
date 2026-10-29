@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Install and setup questions
+    url: https://github.com/thegregstengel/catch/discussions/categories/q-a
+    about: Ask about rooting, the Magisk module, or setting up Catch.
+  - name: Ideas
+    url: https://github.com/thegregstengel/catch/discussions/categories/ideas
+    about: Suggest a feature or a streaming app to support.
+  - name: Report a security problem
+    url: https://github.com/thegregstengel/catch/security/advisories/new
+    about: Report security problems privately, not in a public issue.

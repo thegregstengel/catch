@@ -127,14 +127,23 @@ The details are in [How Catch works](docs/how-it-works.md).
 - [Updates and releases](docs/updates.md)
 - [Develop Catch](docs/development.md)
 - [Changelog](CHANGELOG.md)
+- [Security policy](SECURITY.md)
 
 ## Help build Catch
 
-Issues and pull requests are welcome. The most useful things right now:
+Issues and pull requests are welcome, and questions about installing or setting
+up Catch go in [Discussions](https://github.com/thegregstengel/catch/discussions).
+The most useful things right now:
 
-1. **Run Catch on your Hydrow and report what breaks.** Open an issue with what
-   you did, what happened, and `adb logcat` output if you can get it.
-1. **Try other streaming apps in the pane** and report which ones work.
+1. **Tell us whether Catch works on your Hydrow.** A
+   [hardware report](https://github.com/thegregstengel/catch/issues/new?template=hardware_report.yml)
+   shows which rowers the install guide fits, even if you only check your
+   tablet's details.
+1. **Report what breaks.** A
+   [bug report](https://github.com/thegregstengel/catch/issues/new?template=bug_report.yml)
+   asks for everything needed to fix it.
+1. **Try other streaming apps in the pane** and file a
+   [streaming app report](https://github.com/thegregstengel/catch/issues/new?template=app_report.yml).
 1. **Send a pull request** for a bug you can reproduce or a small, well-scoped
    feature. For anything larger, open an issue first so we can agree on the
    shape.

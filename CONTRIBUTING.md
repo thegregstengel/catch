@@ -5,8 +5,12 @@ long way.
 
 ## Before you start
 
-- For a bug, open an issue with the steps to reproduce it, what you expected,
-  and what happened. `adb logcat` output helps a lot.
+- For a bug, open an [issue](https://github.com/thegregstengel/catch/issues/new/choose)
+  and pick the form that fits. `adb logcat` output helps a lot.
+- For install or setup questions, use
+  [Discussions](https://github.com/thegregstengel/catch/discussions).
+- For a security problem, follow [SECURITY.md](SECURITY.md) instead of opening
+  an issue.
 - For a feature or anything larger than an afternoon, open an issue first so we
   can agree on the shape before you write it.
 

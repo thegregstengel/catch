@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in Catch doesn't work the way it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. For install or setup questions, please use
+        [Discussions](https://github.com/thegregstengel/catch/discussions) instead.
+  - type: input
+    id: version
+    attributes:
+      label: Catch version
+      description: Shown in **Catch Settings > Updates**.
+      placeholder: "2026.10.29.3"
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hydrow model and tablet
+      description: The rower model, and the **Model** and **Build number** from Android **Settings > About tablet**.
+      placeholder: "Origin, foenix_h, QP1A.190711.020.user.255"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Picked a profile and tapped Go.
+        2. Rowed for a few minutes.
+        3. The split stayed at --:--.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        If you can, connect the tablet to a computer and run
+        `adb logcat -d > catch-log.txt` right after the problem happens, then attach the file.
+        Remove anything personal before you post it.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I'm running the latest Catch release, or I've said above which version I'm on.
+          required: true
+        - label: I searched the existing issues for this problem.
+          required: true

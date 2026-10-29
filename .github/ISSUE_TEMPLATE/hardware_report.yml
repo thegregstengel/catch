@@ -1,0 +1,45 @@
+name: Hardware report
+description: Tell us whether Catch works on your Hydrow.
+labels: ["hardware"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Catch is tested on one Hydrow tablet. Reports from other rowers, working or
+        not, show which hardware the install guide fits.
+  - type: dropdown
+    id: model
+    attributes:
+      label: Hydrow model
+      options:
+        - Origin (22-inch pivoting screen)
+        - Wave (16-inch fixed screen)
+        - Arc (24-inch pivoting screen)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: tablet
+    attributes:
+      label: Tablet details
+      description: The **Model**, **Android version**, and **Build number** from Android **Settings > About tablet**.
+      placeholder: "foenix_h, Android 10, QP1A.190711.020.user.255"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: How far did you get?
+      options:
+        - Catch is installed and working
+        - Catch is installed, but something doesn't work
+        - Rooting worked, but the Catch module didn't
+        - I couldn't root the tablet
+        - I only checked the tablet details
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Which install step failed and the error you saw, or anything that worked differently from the guide.
