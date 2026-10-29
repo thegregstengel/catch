@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.catchrower.overlay.fallbackhome">
+    <overlay android:targetPackage="com.android.settings"
+        android:priority="99" android:isStatic="true" />
+    <application android:hasCode="false" android:label="Catch FallbackHome" />
+</manifest>

@@ -1,0 +1,38 @@
+# Local research and device work (never published)
+/apps/
+/captures/
+/device/
+/hardware/
+/research/
+/tools/
+/vendor/
+__pycache__/
+*.pyc
+
+# Build output
+/dist/
+.gradle/
+android/**/build/
+android/local.properties
+android/captures/
+*.apk
+*.aab
+*.apkm
+*.dex
+*.hprof
+
+# Signing and secrets
+*.jks
+*.keystore
+android/keystore/keystore.properties
+.env
+.env.*
+google-services.json
+
+# Editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.swp
+*~

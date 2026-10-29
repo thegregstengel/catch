@@ -1,0 +1,6 @@
+id=catch-privapp
+name=Catch for Hydrow
+version=@VERSION@
+versionCode=@VERSION_CODE@
+author=Greg Stengel
+description=Catch as the privileged Home app, the media pane host, and the Catch boot screens.

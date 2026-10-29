@@ -1,0 +1,7 @@
+# Catch (priv_app) ↔ Hydrow brake UART
+allow priv_app ttyS_device chr_file { open read write ioctl getattr map }
+allow priv_app ttySDIO_device chr_file { open read write ioctl getattr map }
+# Catch looks up the media pane host (catch_display_host). The name has no entry
+# in service_contexts, so it carries the default label. The host checks the
+# caller's uid on every call.
+allow priv_app default_android_service service_manager find

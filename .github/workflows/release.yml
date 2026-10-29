@@ -1,0 +1,120 @@
+name: Release
+
+# Versions are dates. Push a tag to release: v2026.10.29 is a release,
+# v2026.10.29.2 a second release that day, and v2026.10.29-beta.1 a beta.
+on:
+  push:
+    tags:
+      - "v2[0-9][0-9][0-9].*"
+
+permissions:
+  contents: write
+
+env:
+  # SHA-256 of the Catch signing certificate. Tablets only accept updates signed
+  # with this key, so a release signed with anything else must not ship.
+  SIGNING_CERT_SHA256: 6d3abac405bf9a5e8a5e506febff2a66d9cdc1d92b49abea2a68d462b62a634b
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
+
+      - name: Resolve version
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          NAME="${TAG#v}"
+          if ! [[ "$NAME" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}(\.[0-9])?(-(alpha|beta|rc)\.[0-9]{1,2})?$ ]]; then
+            echo "::error::Tag $TAG is not v2026.10.29, v2026.10.29.2, or v2026.10.29-beta.1"
+            exit 1
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          if [[ "$NAME" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Decode signing key
+        env:
+          CATCH_KEYSTORE_BASE64: ${{ secrets.CATCH_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$CATCH_KEYSTORE_BASE64" ]; then
+            echo "::error::Missing secret CATCH_KEYSTORE_BASE64"
+            exit 1
+          fi
+          mkdir -p android/keystore
+          echo "$CATCH_KEYSTORE_BASE64" | base64 -d > android/keystore/catch-upload.jks
+
+      - name: Test, lint, and build
+        working-directory: android
+        env:
+          CATCH_VERSION_NAME: ${{ steps.version.outputs.name }}
+          CATCH_KEYSTORE_FILE: keystore/catch-upload.jks
+          CATCH_KEYSTORE_PASSWORD: ${{ secrets.CATCH_KEYSTORE_PASSWORD }}
+          CATCH_KEY_ALIAS: ${{ secrets.CATCH_KEY_ALIAS }}
+          CATCH_KEY_PASSWORD: ${{ secrets.CATCH_KEY_PASSWORD }}
+        run: ./gradlew testReleaseUnitTest lintRelease assembleRelease --stacktrace
+
+      - name: Check signature and version
+        id: apk
+        run: |
+          BT=$(printf "%s\n" "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          CERT=$("$BT/apksigner" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
+          if [ "$CERT" != "$SIGNING_CERT_SHA256" ]; then
+            echo "::error::APK is signed with $CERT, expected $SIGNING_CERT_SHA256"
+            exit 1
+          fi
+          BADGING=$("$BT/aapt2" dump badging "$APK" | head -1)
+          echo "$BADGING"
+          NAME=$(echo "$BADGING" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+          CODE=$(echo "$BADGING" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p")
+          if [ "$NAME" != "${{ steps.version.outputs.name }}" ]; then
+            echo "::error::APK versionName $NAME does not match the tag"
+            exit 1
+          fi
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Package
+        run: |
+          VERSION=${{ steps.version.outputs.name }}
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/catch-$VERSION.apk"
+          scripts/build-module.sh "dist/catch-$VERSION.apk" "$VERSION" "${{ steps.apk.outputs.code }}" "dist/catch-magisk-$VERSION.zip"
+          (cd dist && sha256sum catch-*.apk catch-magisk-*.zip > SHA256SUMS && cat SHA256SUMS)
+
+      - name: Release notes
+        run: |
+          VERSION=${{ steps.version.outputs.name }}
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > dist/notes.md
+          if [ ! -s dist/notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for [$VERSION]"
+            exit 1
+          fi
+          cat dist/notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Catch ${{ steps.version.outputs.name }}
+          body_path: dist/notes.md
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          files: |
+            dist/catch-*.apk
+            dist/catch-magisk-*.zip
+            dist/SHA256SUMS

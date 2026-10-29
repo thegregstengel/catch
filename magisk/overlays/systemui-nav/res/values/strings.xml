@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Center back+home as a tight pair; side spacers absorb the rest. -->
+    <string name="config_navBarLayout">left[1W];back,home;right[1W]</string>
+</resources>

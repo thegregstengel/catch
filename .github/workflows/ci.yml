@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Test, lint, and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
+
+      - name: Unit tests, lint, and debug build
+        run: ./gradlew testReleaseUnitTest lintRelease assembleDebug --stacktrace
+
+      - name: Room schemas are committed
+        run: git diff --exit-code -- app/schemas
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: |
+            android/app/build/reports/
+            android/app/build/test-results/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catch-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  module:
+    name: Check Magisk module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: shellcheck --shell=sh magisk/service.sh magisk/customize.sh && shellcheck scripts/*.sh

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Matches bootanimation end frame so we don't flash black logo again. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/ic_launcher_background" />
+    <item>
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/catch_splash_nobar" />
+    </item>
+</layer-list>
