@@ -82,8 +82,10 @@ Screens from the current build, captured on a Hydrow tablet with a demo family.
 
 ## Get it
 
-Catch runs on a **rooted** Hydrow rower tablet (Android 10). Rooting needs a
-computer, about an hour, and some comfort with the Android command line.
+Catch runs on a **rooted** Hydrow rower tablet. It's tested on the Android 10
+tablet with model `foenix_h` (MediaTek MT8167); the install guide shows how to
+check yours. Rooting needs a computer, about an hour, and some comfort with the
+Android command line.
 
 1. Follow [Install Catch](docs/install.md) to root the tablet with Magisk.
 1. Download `catch-magisk-<version>.zip` from the
