@@ -26,8 +26,8 @@ up the streaming apps.
 ## Tested hardware
 
 Catch is built and tested on one Hydrow Origin, the original rower with the
-22-inch pivoting screen. It was bought used and has been in daily use for a few
-years. Before you start, check that your tablet matches. In the Android
+22-inch pivoting screen. It was bought used, so its original purchase date is
+unknown, and it has been in use for a few years. Before you start, check that your tablet matches. In the Android
 **Settings** app (see Step 1 for how to open it), tap **About tablet**:
 
 | Field | Tested value |
