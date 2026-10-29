@@ -61,7 +61,11 @@ Screens from the current build, captured on a Hydrow tablet with a demo family.
   from the Hydrow brake about 100 times a second. Set the resistance from Catch.
 - **Watch while you row.** Netflix, Plex, Paramount+, and Disney+ open inside
   the Catch frame with touch and Back working, so the metrics and the family
-  board stay on screen. Aurora Store installs the apps without Google Play.
+  board stay on screen.
+- **No Google required.** The Hydrow tablet has no Google Play Store or Google
+  Play services, and Catch doesn't need them. [Aurora Store](https://auroraoss.com/)
+  installs and updates the streaming apps from the Play catalog with an
+  anonymous account, so you never sign in to Google on the rower.
 - **Family profiles.** Everyone picks themselves on the "Who is rowing?" screen.
   Each profile keeps its own history, badges, and Bluetooth devices.
 - **Heart rate.** Pair a Bluetooth heart rate strap once and Catch connects it

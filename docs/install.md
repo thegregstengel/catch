@@ -138,11 +138,23 @@ The module does the following:
 The first-run wizard walks through Wi-Fi, confirming Catch as Home, Aurora Store,
 choosing which streaming apps to show, and creating the first profile.
 
-To install streaming apps, open **Aurora Store** from the wizard or from Catch
-Settings. The tablet has no Google Play, and Aurora Store installs Play apps
-without it. Download Aurora Store from [auroraoss.com](https://auroraoss.com/) if
-it isn't on the tablet yet. Anonymous sign-in works for Netflix, Plex,
-Paramount+, and Disney+.
+### Streaming apps
+
+The tablet has no Google Play Store and no Google Play services, and nothing
+in this guide adds them. Catch and the streaming apps run without them.
+
+[Aurora Store](https://auroraoss.com/) installs and updates the apps instead.
+It downloads them from the Google Play catalog using an anonymous account, so
+you don't sign in to Google on the rower.
+
+1. Open **Aurora Store** from the setup wizard or from
+   **Catch Settings > Home and apps**. If Aurora Store isn't on the tablet yet,
+   download it from [auroraoss.com](https://auroraoss.com/).
+1. Choose **Anonymous** when Aurora Store asks how to sign in.
+1. Install Netflix, Plex, Paramount+, and Disney+, then sign in to each app
+   with your own streaming account.
+1. To keep the apps current, open Aurora Store's **Updates** tab now and then,
+   or turn on automatic updates in its settings.
 
 ## Updates
 
