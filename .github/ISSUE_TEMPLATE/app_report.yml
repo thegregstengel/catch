@@ -1,0 +1,42 @@
+name: Streaming app report
+description: Tell us how a streaming app works in the Catch media pane.
+labels: ["app compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Catch plays Netflix, Plex, Paramount+, and Disney+ in its media pane. Reports
+        about these and other apps help decide what Catch supports next.
+  - type: input
+    id: app
+    attributes:
+      label: App and version
+      description: The app's name, and its version from Aurora Store.
+      placeholder: "Peacock 6.4.2"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Catch version
+      description: Shown in **Catch Settings > Updates**.
+      placeholder: "2026.10.29.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: How well does it work?
+      options:
+        - Works well, including video playback
+        - Opens, but video doesn't play or stutters
+        - Opens, but touch or Back doesn't work
+        - Doesn't open in the pane
+        - The tablet froze or restarted
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Anything else that helps, such as what you tapped before it failed, or `adb logcat -d` output.
