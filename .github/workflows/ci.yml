@@ -18,17 +18,17 @@ jobs:
       run:
         working-directory: android
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
           cache: gradle
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools platforms;android-35 build-tools;35.0.0
 
@@ -38,7 +38,7 @@ jobs:
       - name: Room schemas are committed
         run: git diff --exit-code -- app/schemas
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: reports
@@ -47,7 +47,7 @@ jobs:
             android/app/build/test-results/
           if-no-files-found: ignore
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: catch-debug
           path: android/app/build/outputs/apk/debug/*.apk
@@ -57,7 +57,7 @@ jobs:
     name: Check Magisk module
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: ShellCheck
         run: shellcheck --shell=sh magisk/service.sh magisk/customize.sh && shellcheck scripts/*.sh
