@@ -12,8 +12,7 @@ up the streaming apps.
 
 ## What you need
 
-- A Hydrow rower with the Android 10 tablet (board `foenix_h`, MediaTek MT8167).
-  Catch is built and tested on this hardware only.
+- A Hydrow rower whose tablet matches the [tested hardware](#tested-hardware).
 - A Linux computer with [Android platform tools](https://developer.android.com/tools/releases/platform-tools)
   (`adb` and `fastboot`) and Python 3.
 - A USB cable that reaches from the computer to the tablet.
@@ -24,12 +23,34 @@ up the streaming apps.
 - The latest `catch-magisk-<version>.zip` from
   [Catch releases](https://github.com/thegregstengel/catch/releases).
 
+## Tested hardware
+
+Catch is built and tested on one Hydrow tablet. Before you start, check that
+yours matches. In the Android **Settings** app (see Step 1 for how to open it),
+tap **About tablet**:
+
+| Field | Tested value |
+| --- | --- |
+| Model | `foenix_h` |
+| Android version | 10 |
+| Build number | `QP1A.190711.020.user.255` |
+
+The tablet uses a MediaTek MT8167 chip with a 1920 x 1080 screen. A different
+model or Android version may still work, but this guide hasn't been tried on it.
+If you try Catch on other Hydrow hardware, please
+[open an issue](https://github.com/thegregstengel/catch/issues) with what you
+find.
+
 ## Step 1: Turn on USB debugging
 
-1. Open the tablet's Android **Settings**. The Hydrow community documents the
-   current way to reach Settings from the Hydrow app.
-1. Tap **About tablet**, then tap **Build number** seven times.
-1. Go back, open **Developer options**, and turn on **USB debugging**.
+These steps start from a stock Hydrow, with no changes made yet.
+
+1. In the Hydrow app, open the Wi-Fi settings and tap **Advanced**. The tablet
+   opens Android's own **Settings** app.
+1. Tap **About tablet**, then tap **Build number** repeatedly until a message
+   says that you are now a developer.
+1. Go back and tap **System > Advanced > Developer options**.
+1. Turn on **USB debugging**.
 1. Connect the tablet to your computer and accept the debugging prompt.
 1. Confirm the connection:
 
@@ -47,8 +68,9 @@ fastboot flashing unlock
 fastboot reboot
 ```
 
-Confirm the unlock on the tablet if it asks. After the reboot, turn on USB
-debugging again, because the unlock reset the tablet.
+Confirm the unlock on the tablet if it asks. The unlock resets the tablet, so
+after the reboot, repeat [Step 1](#step-1-turn-on-usb-debugging) to turn on USB
+debugging again.
 
 The tablet now shows an "Orange State" warning for a few seconds at every boot.
 That is expected for an unlocked bootloader.
