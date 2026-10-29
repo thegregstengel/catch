@@ -6,6 +6,11 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.10.29]
+
+The first stable release of Catch. It contains everything in 2026.10.29-beta.1,
+and was tested by updating a tablet from that beta inside Catch.
+
 ## [2026.10.29-beta.1]
 
 The first public build of Catch.
