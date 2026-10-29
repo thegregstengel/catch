@@ -36,7 +36,7 @@ numbers never leave the screen. Every meter lands on a family board, where
 weekly goals, challenges, streaks, and badges keep everyone coming back.
 
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="Catch during a row, with Seinfeld playing in Netflix inside the Catch frame" width="820">
+  <img src="docs/images/dashboard.jpg" alt="Catch during a row, with Seinfeld playing in Netflix inside the Catch frame" width="820">
 </p>
 
 ## What it looks like
