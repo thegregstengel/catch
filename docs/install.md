@@ -25,21 +25,23 @@ up the streaming apps.
 
 ## Tested hardware
 
-Catch is built and tested on one Hydrow tablet. Before you start, check that
-yours matches. In the Android **Settings** app (see Step 1 for how to open it),
-tap **About tablet**:
+Catch is built and tested on one Hydrow Origin, the original rower with the
+22-inch pivoting screen. It was bought used and has been in daily use for a few
+years. Before you start, check that your tablet matches. In the Android
+**Settings** app (see Step 1 for how to open it), tap **About tablet**:
 
 | Field | Tested value |
 | --- | --- |
+| Rower | Hydrow Origin |
 | Model | `foenix_h` |
 | Android version | 10 |
 | Build number | `QP1A.190711.020.user.255` |
 
 The tablet uses a MediaTek MT8167 chip with a 1920 x 1080 screen. A different
 model or Android version may still work, but this guide hasn't been tried on it.
-If you try Catch on other Hydrow hardware, please
-[open an issue](https://github.com/thegregstengel/catch/issues) with what you
-find.
+If you try Catch on a Hydrow Wave, a Hydrow Arc, or an Origin with
+different details, please file a
+[hardware report](https://github.com/thegregstengel/catch/issues/new?template=hardware_report.yml).
 
 ## Step 1: Turn on USB debugging
 
