@@ -165,15 +165,6 @@ private fun CatchRoot(
         }
     }
 
-    fun selectGuarded(profile: app.catchrower.data.db.ProfileEntity) {
-        val action = if (viewModel.isOwnProfile(profile.id)) {
-            HouseholdGate.Action.OpenOwnProfile
-        } else {
-            HouseholdGate.Action.OpenOtherProfile
-        }
-        gate(action) { pin -> viewModel.selectProfile(profile, pin) }
-    }
-
     if (!state.bootstrapped) {
         Box(Modifier.fillMaxSize().background(CatchNavy))
         return
@@ -189,31 +180,21 @@ private fun CatchRoot(
     when (state.destination) {
         CatchDestination.ProfilePicker -> ProfilePickerScreen(
             profiles = state.profiles,
-            onSelect = ::selectGuarded,
-            onAdd = {
-                gate(HouseholdGate.Action.AddProfile) { pin -> viewModel.openAddProfile(true, pin) }
-            },
+            onSelect = viewModel::selectProfile,
+            onAdd = { viewModel.openAddProfile(true) },
             onCatchSettings = {
                 gate(HouseholdGate.Action.OpenCatchSettings) { pin -> viewModel.openCatchSettings(pin) }
             },
-            onSystemSettings = {
-                gate(HouseholdGate.Action.OpenSystemSettings) { pin ->
-                    if (viewModel.allow(HouseholdGate.Action.OpenSystemSettings, pin)) onOpenSettings()
-                }
-            },
+            onSystemSettings = onOpenSettings,
             availableUpdate = (updateState as? UpdateState.Available)?.release?.version,
         )
         CatchDestination.Dashboard -> DashboardScreen(
             state = state,
-            onSelectProfile = ::selectGuarded,
+            onSelectProfile = viewModel::selectProfile,
             onCatchSettings = {
                 gate(HouseholdGate.Action.OpenCatchSettings) { pin -> viewModel.openCatchSettings(pin) }
             },
-            onSystemSettings = {
-                gate(HouseholdGate.Action.OpenSystemSettings) { pin ->
-                    if (viewModel.allow(HouseholdGate.Action.OpenSystemSettings, pin)) onOpenSettings()
-                }
-            },
+            onSystemSettings = onOpenSettings,
             onLaunchApp = viewModel::launchStreamingApp,
             onCloseEmbedded = viewModel::clearEmbeddedSession,
             onEmbedUnavailable = viewModel::onEmbedUnavailable,
@@ -246,11 +227,7 @@ private fun CatchRoot(
             onSave = viewModel::saveCatchSettings,
             onSetAsHome = onSetAsHome,
             onAurora = onOpenAurora,
-            onSystemSettings = {
-                gate(HouseholdGate.Action.OpenSystemSettings) { pin ->
-                    if (viewModel.allow(HouseholdGate.Action.OpenSystemSettings, pin)) onOpenSettings()
-                }
-            },
+            onSystemSettings = onOpenSettings,
             updateState = updateState,
             updateChannel = updateChannel,
             onCheckUpdate = { viewModel.checkForUpdate() },

@@ -20,12 +20,12 @@
     <string name="monthly_goal_meters">Monthly family goal (m)</string>
     <string name="family_goal_this_month">This month\'s goal</string>
     <string name="settings_pin_title">Settings PIN</string>
-    <string name="settings_pin_body">Four digits. After you save a PIN, Catch Settings, other profiles, household reset, and the family goal ask for it. This does not lock Android Settings.</string>
+    <string name="settings_pin_body">Four digits. After you save a PIN, opening Catch Settings asks for it. Household reset and the family goal are in Catch Settings. Switching profiles does not ask for the PIN, and this PIN does not lock Android Settings.</string>
     <string name="settings_pin_label">New PIN</string>
     <string name="settings_pin_set">A PIN is set. Enter a new 4-digit PIN to replace it, or leave this blank to keep the current one.</string>
-    <string name="settings_pin_unset">No PIN yet. Household controls stay open until you save one.</string>
+    <string name="settings_pin_unset">No PIN yet. Catch Settings stays open until you save one.</string>
     <string name="pin_title">Enter the settings PIN</string>
-    <string name="pin_body">This unlocks a household control.</string>
+    <string name="pin_body">This unlocks Catch Settings.</string>
     <string name="pin_label">PIN</string>
     <string name="pin_unlock">Unlock</string>
     <string name="pin_wrong">That PIN is not right.</string>

@@ -1,11 +1,12 @@
 package app.catchrower.data
 
 /**
- * One household PIN for Catch Settings and the controls around other rowers.
- * Opening the rower's own profile does not ask for it.
+ * One household PIN for opening Catch Settings.
  *
- * The PIN is not shared with Android Settings. [app.catchrower.util.AndroidSettingsPin]
- * records why this tablet cannot do that.
+ * Switching profiles, opening another rower's profile, and adding a profile do
+ * not ask for it. Household reset and the family goal live on the Catch Settings
+ * screen, so they stay behind the same PIN. Android Settings is not this PIN.
+ * [app.catchrower.util.AndroidSettingsPin] records why this tablet cannot share it.
  */
 object HouseholdGate {
     const val PIN_LENGTH = 4
@@ -37,12 +38,22 @@ object HouseholdGate {
         ownProfileId == null || profileId == ownProfileId
 
     /**
-     * Until a PIN is saved, household controls stay open so someone can set one.
-     * After that, only [Action.OpenOwnProfile] works before the PIN is accepted.
+     * The PIN is asked only to open Catch Settings, and for the household actions
+     * that live on that screen. Until a PIN is saved, Catch Settings stays open
+     * so someone can set one.
      */
     fun allowed(action: Action, pinConfigured: Boolean, pinAccepted: Boolean): Boolean {
         if (!pinConfigured) return true
-        if (action == Action.OpenOwnProfile) return true
-        return pinAccepted
+        return when (action) {
+            Action.OpenCatchSettings,
+            Action.ResetHouseholdMetrics,
+            Action.EditFamilyGoal,
+            -> pinAccepted
+            Action.OpenOwnProfile,
+            Action.OpenOtherProfile,
+            Action.AddProfile,
+            Action.OpenSystemSettings,
+            -> true
+        }
     }
 }

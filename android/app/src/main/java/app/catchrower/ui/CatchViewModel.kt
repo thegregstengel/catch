@@ -133,8 +133,6 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     private val _sessionSummary = MutableStateFlow<SessionSummary?>(null)
     private val yearReviewPrefs = YearReviewPrefs(app)
     private var activeProfileId: Long? = null
-    /** Last rower who opened a profile. Survives the wake screen clearing the active id. */
-    private var ownProfileId: Long? = null
     /** True after the PIN (or an unset PIN) opened Catch Settings, until that screen closes. */
     private var settingsUnlocked = false
     private var timezoneId: String = "America/New_York"
@@ -238,7 +236,6 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             repo.ensureSettings()
             val s = repo.getSettings()
-            if (ownProfileId == null) ownProfileId = s.activeProfileId
             _destination.value = if (s.onboardingComplete) {
                 CatchDestination.ProfilePicker
             } else {
@@ -273,9 +270,6 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             repo.observeSettings().collect { settings ->
                 timezoneId = settings?.timezoneId ?: "America/New_York"
-                if (ownProfileId == null && settings?.activeProfileId != null) {
-                    ownProfileId = settings.activeProfileId
-                }
                 publishYearInReview()
             }
         }
@@ -323,7 +317,6 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
                 _destination.value = CatchDestination.Setup
                 return@launch
             }
-            if (ownProfileId == null) ownProfileId = s.activeProfileId
             settingsUnlocked = false
             endWorkoutIfNeeded()
             repo.clearActiveProfile()
@@ -332,9 +325,6 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun isOwnProfile(profileId: Long): Boolean =
-        HouseholdGate.isOwn(profileId, ownProfileId ?: uiState.value.settings?.activeProfileId)
-
     fun allow(action: HouseholdGate.Action, enteredPin: String?): Boolean {
         val pinOk = HouseholdGate.matches(currentPin(), enteredPin.orEmpty())
         val inSettings = settingsUnlocked && _destination.value == CatchDestination.Settings
@@ -342,14 +332,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         return HouseholdGate.allowed(action, pinConfigured(), accepted)
     }
 
-    fun selectProfile(profile: ProfileEntity, enteredPin: String? = null) {
-        val action = if (isOwnProfile(profile.id)) {
-            HouseholdGate.Action.OpenOwnProfile
-        } else {
-            HouseholdGate.Action.OpenOtherProfile
-        }
-        if (!allow(action, enteredPin)) return
-        ownProfileId = profile.id
+    fun selectProfile(profile: ProfileEntity) {
         viewModelScope.launch {
             repo.setActiveProfile(profile.id)
             _showBtPicker.value = true
@@ -375,13 +358,8 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun openAddProfile(show: Boolean = true, enteredPin: String? = null) {
-        if (!show) {
-            _showAddProfile.value = false
-            return
-        }
-        if (!allow(HouseholdGate.Action.AddProfile, enteredPin)) return
-        _showAddProfile.value = true
+    fun openAddProfile(show: Boolean = true) {
+        _showAddProfile.value = show
     }
 
     fun createProfile(
@@ -425,7 +403,6 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             if (name.isBlank()) return@launch
             val id = repo.addProfile(name, photoUri, weightKg, ageYears, sex)
-            ownProfileId = id
             repo.updateSettings { it.copy(onboardingComplete = true, activeProfileId = id) }
             _showAddProfile.value = false
             _showBtPicker.value = false

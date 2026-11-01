@@ -6,6 +6,13 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The settings PIN opens Catch Settings only. Switching profiles, opening
+  another rower's profile, and adding a profile do not ask for it. Household
+  reset and the family goal stay in Catch Settings. Opening Android Settings
+  from the home screen does not ask for the PIN.
+
 ## [2026.11.01.2]
 
 ### Added
