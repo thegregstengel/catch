@@ -41,6 +41,7 @@ fun DashboardScreen(
     onDismissSessionGoal: () -> Unit,
     sessionGoalInitialMeters: Int,
     onOpenChallenges: () -> Unit,
+    onOpenProfile: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -64,6 +65,7 @@ fun DashboardScreen(
                         active = state.activeProfile,
                         profiles = state.profiles,
                         onSelect = onSelectProfile,
+                        onOpenProfile = onOpenProfile,
                         onCatchSettings = onCatchSettings,
                         onSystemSettings = onSystemSettings,
                     )

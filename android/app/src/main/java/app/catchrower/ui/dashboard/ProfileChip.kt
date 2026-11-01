@@ -36,6 +36,7 @@ fun ProfileChip(
     active: ProfileEntity?,
     profiles: List<ProfileEntity>,
     onSelect: (ProfileEntity) -> Unit,
+    onOpenProfile: () -> Unit,
     onCatchSettings: () -> Unit,
     onSystemSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -74,6 +75,16 @@ fun ProfileChip(
                     onClick = {
                         expanded = false
                         onSelect(p)
+                    },
+                )
+            }
+            if (active != null) {
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.profile)) },
+                    onClick = {
+                        expanded = false
+                        onOpenProfile()
                     },
                 )
             }

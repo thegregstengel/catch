@@ -10,6 +10,11 @@ the section that matches the tag as the release notes.
 
 - Brave, Prime Video, and Apple TV are on the home grid, with Netflix, Plex,
   Paramount+, and Disney+.
+- Each profile has a monthly calendar of days rowed, with that rower's stats
+  and awards. Saved sessions stay on the tablet, so later months and years
+  still fill in.
+- During the first week of January, a short year in review opens when the
+  previous year has saved sessions.
 
 ## [2026.10.29.3]
 
