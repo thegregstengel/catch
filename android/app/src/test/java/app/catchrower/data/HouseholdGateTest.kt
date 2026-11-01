@@ -22,16 +22,38 @@ class HouseholdGateTest {
     }
 
     @Test
-    fun householdControlsNeedThePinOnceItIsSet() {
-        val gated = listOf(
+    fun pinGatesCatchSettingsOnly() {
+        val openWithoutPin = listOf(
+            HouseholdGate.Action.OpenOwnProfile,
             HouseholdGate.Action.OpenOtherProfile,
             HouseholdGate.Action.AddProfile,
-            HouseholdGate.Action.OpenCatchSettings,
             HouseholdGate.Action.OpenSystemSettings,
+        )
+        openWithoutPin.forEach { action ->
+            assertTrue(HouseholdGate.allowed(action, pinConfigured = true, pinAccepted = false))
+        }
+        assertFalse(
+            HouseholdGate.allowed(
+                HouseholdGate.Action.OpenCatchSettings,
+                pinConfigured = true,
+                pinAccepted = false,
+            ),
+        )
+        assertTrue(
+            HouseholdGate.allowed(
+                HouseholdGate.Action.OpenCatchSettings,
+                pinConfigured = true,
+                pinAccepted = true,
+            ),
+        )
+    }
+
+    @Test
+    fun resetAndFamilyGoalStayBehindTheSettingsPin() {
+        listOf(
             HouseholdGate.Action.ResetHouseholdMetrics,
             HouseholdGate.Action.EditFamilyGoal,
-        )
-        gated.forEach { action ->
+        ).forEach { action ->
             assertFalse(HouseholdGate.allowed(action, pinConfigured = true, pinAccepted = false))
             assertTrue(HouseholdGate.allowed(action, pinConfigured = true, pinAccepted = true))
         }

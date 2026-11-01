@@ -9,8 +9,9 @@ object SystemSettings {
      * Opens the real Android system Settings app.
      *
      * Catch's PIN is not applied to this app. [AndroidSettingsPin] explains why
-     * this Hydrow build cannot share the PIN with Android Settings. Callers ask
-     * for the Catch PIN before calling [open].
+     * this Hydrow build cannot share the PIN with Android Settings. Callers
+     * outside Catch Settings do not ask for the Catch PIN first. The button
+     * inside Catch Settings is already on that PIN-gated screen.
      */
     fun open(context: Context) {
         context.startActivity(

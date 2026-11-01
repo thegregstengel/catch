@@ -17,8 +17,8 @@ package app.catchrower.util
  * before an app release can request it. This change does not publish a release.
  *
  * A lockscreen credential would lock the whole tablet, not the Settings app.
- * Catch asks for its own PIN before it opens Android Settings. That does not
- * protect Settings opened any other way.
+ * Opening Android Settings from the home screen does not ask for the Catch PIN.
+ * The Android Settings app itself is not protected by that PIN.
  */
 object AndroidSettingsPin {
     const val REASON: String =
@@ -31,8 +31,8 @@ object AndroidSettingsPin {
             "SET_AND_VERIFY_LOCKSCREEN_CREDENTIALS, which is not allowlisted. Requesting it would stop " +
             "the tablet from booting until a Magisk module release shipped the allowlist first, and this " +
             "change does not publish a release. A lockscreen credential would also lock the whole tablet, " +
-            "not the Settings app. Catch asks for its PIN before it opens Android Settings. The Android " +
-            "Settings app itself is not protected by that PIN."
+            "not the Settings app. Opening Android Settings from the home screen does not ask for " +
+            "the Catch PIN. The Android Settings app itself is not protected by that PIN."
 
     fun canShareWithAndroidSettings(): Boolean = false
 }
