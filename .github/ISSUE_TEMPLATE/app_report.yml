@@ -5,8 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Catch plays Netflix, Plex, Paramount+, and Disney+ in its media pane. Reports
-        about these and other apps help decide what Catch supports next.
+        Catch plays Netflix, Plex, Paramount+, Disney+, Brave, Prime Video, and
+        Apple TV in its media pane. Reports about these and other apps help
+        decide what Catch supports next.
   - type: input
     id: app
     attributes:

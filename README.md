@@ -59,9 +59,9 @@ Screens from the current build, captured on a Hydrow tablet with a demo family.
 - **Live rower metrics.** Power, calories, split, average split, stroke rate,
   strokes, elapsed time, and distance against your session goal, read straight
   from the Hydrow brake about 100 times a second. Set the resistance from Catch.
-- **Watch while you row.** Netflix, Plex, Paramount+, and Disney+ open inside
-  the Catch frame with touch and Back working, so the metrics and the family
-  board stay on screen.
+- **Watch while you row.** Netflix, Plex, Paramount+, Disney+, Brave, Prime
+  Video, and Apple TV open inside the Catch frame with touch and Back working,
+  so the metrics and the family board stay on screen.
 - **No Google required.** The Hydrow tablet has no Google Play Store or Google
   Play services, and Catch doesn't need them. [Aurora Store](https://auroraoss.com/)
   installs and updates the streaming apps from the Play catalog with an
@@ -157,5 +157,5 @@ MIT. See [LICENSE](LICENSE).
 
 Hydrow is a trademark of Hydrow, Inc. Catch is an independent project and is
 not affiliated with, endorsed by, or supported by Hydrow. Rooting your rower is
-at your own risk. Netflix, Plex, Paramount+, and Disney+ are
-trademarks of their respective owners.
+at your own risk. Netflix, Plex, Paramount+, Disney+, Brave, Prime Video, and
+Apple TV are trademarks of their respective owners.
