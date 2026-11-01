@@ -5,7 +5,13 @@ import android.content.Intent
 import android.provider.Settings
 
 object SystemSettings {
-    /** Opens the real Android system Settings app. */
+    /**
+     * Opens the real Android system Settings app.
+     *
+     * Catch's PIN is not applied to this app. [AndroidSettingsPin] explains why
+     * this Hydrow build cannot share the PIN with Android Settings. Callers ask
+     * for the Catch PIN before calling [open].
+     */
     fun open(context: Context) {
         context.startActivity(
             Intent(Settings.ACTION_SETTINGS).apply {

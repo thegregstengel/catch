@@ -18,11 +18,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.catchrower.data.HouseholdGate
 import app.catchrower.ui.CatchDestination
 import app.catchrower.ui.CatchViewModel
 import app.catchrower.ui.challenges.ChallengesScreen
@@ -34,6 +38,7 @@ import app.catchrower.ui.profile.ProfilePickerScreen
 import app.catchrower.ui.profile.ProfileScreen
 import app.catchrower.ui.profile.YearInReviewDialog
 import app.catchrower.ui.settings.CatchSettingsScreen
+import app.catchrower.ui.settings.PinDialog
 import app.catchrower.ui.setup.SetupScreen
 import app.catchrower.ui.theme.CatchNavy
 import app.catchrower.ui.theme.CatchTheme
@@ -142,6 +147,32 @@ private fun CatchRoot(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val updateChannel by viewModel.updateChannel.collectAsStateWithLifecycle()
+    var pinPrompt by remember { mutableStateOf<((String) -> Boolean)?>(null) }
+
+    fun gate(action: HouseholdGate.Action, onGranted: (String?) -> Unit) {
+        if (viewModel.allow(action, null)) {
+            onGranted(null)
+        } else {
+            pinPrompt = { pin ->
+                if (viewModel.allow(action, pin)) {
+                    onGranted(pin)
+                    pinPrompt = null
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+
+    fun selectGuarded(profile: app.catchrower.data.db.ProfileEntity) {
+        val action = if (viewModel.isOwnProfile(profile.id)) {
+            HouseholdGate.Action.OpenOwnProfile
+        } else {
+            HouseholdGate.Action.OpenOtherProfile
+        }
+        gate(action) { pin -> viewModel.selectProfile(profile, pin) }
+    }
 
     if (!state.bootstrapped) {
         Box(Modifier.fillMaxSize().background(CatchNavy))
@@ -158,17 +189,31 @@ private fun CatchRoot(
     when (state.destination) {
         CatchDestination.ProfilePicker -> ProfilePickerScreen(
             profiles = state.profiles,
-            onSelect = viewModel::selectProfile,
-            onAdd = { viewModel.openAddProfile(true) },
-            onCatchSettings = viewModel::goCatchSettings,
-            onSystemSettings = onOpenSettings,
+            onSelect = ::selectGuarded,
+            onAdd = {
+                gate(HouseholdGate.Action.AddProfile) { pin -> viewModel.openAddProfile(true, pin) }
+            },
+            onCatchSettings = {
+                gate(HouseholdGate.Action.OpenCatchSettings) { pin -> viewModel.openCatchSettings(pin) }
+            },
+            onSystemSettings = {
+                gate(HouseholdGate.Action.OpenSystemSettings) { pin ->
+                    if (viewModel.allow(HouseholdGate.Action.OpenSystemSettings, pin)) onOpenSettings()
+                }
+            },
             availableUpdate = (updateState as? UpdateState.Available)?.release?.version,
         )
         CatchDestination.Dashboard -> DashboardScreen(
             state = state,
-            onSelectProfile = viewModel::selectProfile,
-            onCatchSettings = viewModel::goCatchSettings,
-            onSystemSettings = onOpenSettings,
+            onSelectProfile = ::selectGuarded,
+            onCatchSettings = {
+                gate(HouseholdGate.Action.OpenCatchSettings) { pin -> viewModel.openCatchSettings(pin) }
+            },
+            onSystemSettings = {
+                gate(HouseholdGate.Action.OpenSystemSettings) { pin ->
+                    if (viewModel.allow(HouseholdGate.Action.OpenSystemSettings, pin)) onOpenSettings()
+                }
+            },
             onLaunchApp = viewModel::launchStreamingApp,
             onCloseEmbedded = viewModel::clearEmbeddedSession,
             onEmbedUnavailable = viewModel::onEmbedUnavailable,
@@ -198,20 +243,22 @@ private fun CatchRoot(
             onAddProfile = { viewModel.openAddProfile(true) },
             onUpdateProfile = viewModel::updateProfile,
             onDeleteProfile = viewModel::deleteProfile,
-            onWeeklyGoalMiles = viewModel::setWeeklyGoalMiles,
-            onMonthlyGoalMiles = viewModel::setMonthlyGoalMiles,
-            onToggleApp = viewModel::toggleAppEnabled,
+            onSave = viewModel::saveCatchSettings,
             onSetAsHome = onSetAsHome,
             onAurora = onOpenAurora,
-            onSystemSettings = onOpenSettings,
+            onSystemSettings = {
+                gate(HouseholdGate.Action.OpenSystemSettings) { pin ->
+                    if (viewModel.allow(HouseholdGate.Action.OpenSystemSettings, pin)) onOpenSettings()
+                }
+            },
             updateState = updateState,
             updateChannel = updateChannel,
             onCheckUpdate = { viewModel.checkForUpdate() },
             onInstallUpdate = viewModel::installUpdate,
-            onUpdateChannel = viewModel::setUpdateChannel,
             onExportJson = { viewModel.exportWorkouts("json") },
             onExportCsv = { viewModel.exportWorkouts("csv") },
             onPrivacyWipe = viewModel::privacyWipe,
+            onResetHousehold = { viewModel.resetHouseholdMetrics(confirmed = true) },
             onOpenChallenges = viewModel::goChallenges,
             onResistance = viewModel::setResistance,
         )
@@ -227,6 +274,7 @@ private fun CatchRoot(
             timezoneId = state.settings?.timezoneId,
             onBack = viewModel::leaveProfile,
             onOpenChallenges = viewModel::goChallenges,
+            onResetStats = { id -> viewModel.resetProfileStats(id, confirmed = true) },
         )
     }
     }
@@ -251,6 +299,13 @@ private fun CatchRoot(
             onCreate = viewModel::createProfile,
         )
     }
+    pinPrompt?.let { submit ->
+        PinDialog(
+            onDismiss = { pinPrompt = null },
+            onSubmit = submit,
+        )
+    }
+
     if (state.showBtPicker) {
         BtDevicePickerDialog(
             remembered = state.rememberedBt,

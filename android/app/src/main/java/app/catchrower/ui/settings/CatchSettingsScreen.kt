@@ -33,8 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.catchrower.R
+import app.catchrower.data.HouseholdGate
+import app.catchrower.data.StatsReset
 import app.catchrower.data.db.ProfileEntity
 import app.catchrower.media.StreamingApps
 import app.catchrower.ui.CatchUiState
@@ -47,8 +50,6 @@ import app.catchrower.ui.theme.CatchTextSecondary
 import app.catchrower.update.UpdateChannel
 import app.catchrower.update.UpdateState
 
-private const val METERS_PER_MILE = 1609.344f
-
 @Composable
 fun CatchSettingsScreen(
     state: CatchUiState,
@@ -56,9 +57,7 @@ fun CatchSettingsScreen(
     onAddProfile: () -> Unit,
     onUpdateProfile: (ProfileEntity) -> Unit,
     onDeleteProfile: (Long) -> Unit,
-    onWeeklyGoalMiles: (Float) -> Unit,
-    onMonthlyGoalMiles: (Float) -> Unit,
-    onToggleApp: (packageId: String, enabled: Boolean) -> Unit,
+    onSave: (SettingsForm.Parsed) -> Unit,
     onSetAsHome: () -> Unit,
     onAurora: () -> Unit,
     onSystemSettings: () -> Unit,
@@ -66,32 +65,47 @@ fun CatchSettingsScreen(
     updateChannel: UpdateChannel,
     onCheckUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
-    onUpdateChannel: (UpdateChannel) -> Unit,
     onExportJson: () -> Unit,
     onExportCsv: () -> Unit,
     onPrivacyWipe: () -> Unit,
+    onResetHousehold: () -> Unit,
     onOpenChallenges: () -> Unit = {},
     onResistance: (Int) -> Unit = {},
 ) {
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
     var confirmDeleteId by remember { mutableStateOf<Long?>(null) }
+    var confirmHouseholdReset by remember { mutableStateOf(false) }
+    var formError by remember { mutableStateOf<String?>(null) }
 
-    val weeklyMiles = (state.settings?.weeklyFamilyGoalMeters ?: 500_000) / METERS_PER_MILE
-    val monthlyMiles = (state.settings?.monthlyFamilyGoalMeters ?: 2_000_000) / METERS_PER_MILE
-    var weeklyText by remember(weeklyMiles) {
-        mutableStateOf("%.0f".format(weeklyMiles))
-    }
-    var monthlyText by remember(monthlyMiles) {
-        mutableStateOf("%.0f".format(monthlyMiles))
+    val savedGoal = state.settings?.monthlyFamilyGoalMeters ?: 2_000_000
+    val savedPin = state.settings?.settingsPin.orEmpty()
+    val savedDisabledKey = state.settings?.disabledAppPackages.orEmpty()
+    var goalText by remember(savedGoal) { mutableStateOf(savedGoal.toString()) }
+    var pinText by remember(savedPin) { mutableStateOf("") }
+    var channel by remember(updateChannel) { mutableStateOf(updateChannel) }
+    var disabled by remember(savedDisabledKey) {
+        mutableStateOf(
+            savedDisabledKey.split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet(),
+        )
     }
 
-    val disabled = state.settings
-        ?.disabledAppPackages
-        ?.split(',')
-        ?.map { it.trim() }
-        ?.filter { it.isNotEmpty() }
-        ?.toSet()
-        .orEmpty()
+    fun save() {
+        when (
+            val result = SettingsForm.parse(
+                monthlyGoalText = goalText,
+                disabledAppPackages = disabled,
+                updateChannel = channel,
+                pinText = pinText,
+                existingPin = savedPin,
+            )
+        ) {
+            is SettingsForm.ParseResult.Ok -> {
+                formError = null
+                onSave(result.parsed)
+            }
+            is SettingsForm.ParseResult.Invalid -> formError = result.message
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -116,13 +130,24 @@ fun CatchSettingsScreen(
                     stringResource(R.string.catch_settings),
                     style = MaterialTheme.typography.displayLarge,
                 )
-                TextButton(onClick = onBack) {
-                    Text(stringResource(R.string.back))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onBack) {
+                        Text(stringResource(R.string.back))
+                    }
+                    Button(
+                        onClick = { save() },
+                        colors = ButtonDefaults.buttonColors(containerColor = CatchAccent),
+                    ) {
+                        Text(stringResource(R.string.save))
+                    }
                 }
             }
 
             state.statusMessage?.let { msg ->
                 Text(msg, color = CatchAccent)
+            }
+            formError?.let { msg ->
+                Text(msg, color = MaterialTheme.colorScheme.error)
             }
 
             GlassPanel(modifier = Modifier.fillMaxWidth()) {
@@ -154,6 +179,38 @@ fun CatchSettingsScreen(
                     ) {
                         Text(stringResource(R.string.add_profile))
                     }
+                }
+            }
+
+            GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.settings_pin_title),
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+                    Text(
+                        stringResource(R.string.settings_pin_body),
+                        color = CatchTextSecondary,
+                    )
+                    Text(
+                        stringResource(
+                            if (HouseholdGate.isConfigured(savedPin)) {
+                                R.string.settings_pin_set
+                            } else {
+                                R.string.settings_pin_unset
+                            },
+                        ),
+                        color = CatchTextSecondary,
+                    )
+                    OutlinedTextField(
+                        value = pinText,
+                        onValueChange = { pinText = it.filter { ch -> ch.isDigit() }.take(HouseholdGate.PIN_LENGTH) },
+                        label = { Text(stringResource(R.string.settings_pin_label)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
 
@@ -192,50 +249,14 @@ fun CatchSettingsScreen(
                         stringResource(R.string.settings_family_goals_body),
                         color = CatchTextSecondary,
                     )
-                    Row(
+                    OutlinedTextField(
+                        value = goalText,
+                        onValueChange = { goalText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text(stringResource(R.string.monthly_goal_meters)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            value = weeklyText,
-                            onValueChange = { weeklyText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                            label = { Text(stringResource(R.string.weekly_goal_miles)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Button(
-                            onClick = {
-                                weeklyText.toFloatOrNull()?.let { onWeeklyGoalMiles(it) }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = CatchAccent),
-                        ) {
-                            Text(stringResource(R.string.save))
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            value = monthlyText,
-                            onValueChange = { monthlyText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                            label = { Text(stringResource(R.string.monthly_goal_miles)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Button(
-                            onClick = {
-                                monthlyText.toFloatOrNull()?.let { onMonthlyGoalMiles(it) }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = CatchAccent),
-                        ) {
-                            Text(stringResource(R.string.save))
-                        }
-                    }
+                    )
                     Button(
                         onClick = onOpenChallenges,
                         colors = ButtonDefaults.buttonColors(containerColor = CatchAccent),
@@ -263,7 +284,11 @@ fun CatchSettingsScreen(
                             Switch(
                                 checked = enabled,
                                 onCheckedChange = { on ->
-                                    app.packageIds.forEach { onToggleApp(it, on) }
+                                    disabled = if (on) {
+                                        disabled - app.packageIds.toSet()
+                                    } else {
+                                        disabled + app.packageIds
+                                    }
                                 },
                             )
                         }
@@ -293,10 +318,10 @@ fun CatchSettingsScreen(
 
             UpdatesPanel(
                 state = updateState,
-                channel = updateChannel,
+                channel = channel,
                 onCheck = onCheckUpdate,
                 onInstall = onInstallUpdate,
-                onChannel = onUpdateChannel,
+                onChannel = { channel = it },
             )
 
             GlassPanel(modifier = Modifier.fillMaxWidth()) {
@@ -314,6 +339,9 @@ fun CatchSettingsScreen(
                         }
                         OutlinedButton(onClick = onPrivacyWipe) {
                             Text(stringResource(R.string.privacy_wipe))
+                        }
+                        OutlinedButton(onClick = { confirmHouseholdReset = true }) {
+                            Text(stringResource(R.string.reset_household))
                         }
                     }
                 }
@@ -352,6 +380,30 @@ fun CatchSettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { confirmDeleteId = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (confirmHouseholdReset) {
+        val warning = StatsReset.warning(StatsReset.Target.Household, "")
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmHouseholdReset = false },
+            title = { Text(warning.title) },
+            text = { Text(warning.body) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmHouseholdReset = false
+                        onResetHousehold()
+                    },
+                ) {
+                    Text(stringResource(R.string.reset_household))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmHouseholdReset = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

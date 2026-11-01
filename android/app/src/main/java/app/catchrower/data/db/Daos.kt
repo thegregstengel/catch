@@ -86,6 +86,9 @@ interface WorkoutDao {
     @Update
     suspend fun update(workout: WorkoutEntity)
 
+    @Query("DELETE FROM workouts WHERE profileId = :profileId")
+    suspend fun deleteForProfile(profileId: Long)
+
     @Query("DELETE FROM workouts")
     suspend fun deleteAll()
 }
@@ -131,6 +134,9 @@ interface BadgeAwardDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(award: BadgeAwardEntity): Long
 
+    @Query("DELETE FROM badge_awards WHERE profileId = :profileId")
+    suspend fun deleteForProfile(profileId: Long)
+
     @Query("DELETE FROM badge_awards")
     suspend fun deleteAll()
 }
@@ -175,6 +181,9 @@ interface ChallengeParticipationDao {
     @Query("DELETE FROM challenge_participations WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("DELETE FROM challenge_participations WHERE profileId = :profileId")
+    suspend fun deleteForProfile(profileId: Long)
+
     @Query("DELETE FROM challenge_participations")
     suspend fun deleteAll()
 }
@@ -189,6 +198,9 @@ interface ChallengeWeekWinnerDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(row: ChallengeWeekWinnerEntity)
+
+    @Query("DELETE FROM challenge_week_winners WHERE profileId = :profileId")
+    suspend fun deleteForProfile(profileId: Long)
 
     @Query("DELETE FROM challenge_week_winners")
     suspend fun deleteAll()

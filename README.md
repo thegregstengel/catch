@@ -33,7 +33,7 @@ Catch replaces the stock launcher on a rooted Hydrow tablet. It reads the
 rower's brake directly, so power, split, stroke rate, and distance are live from
 the first stroke, and it plays streaming apps inside its own frame, so the
 numbers never leave the screen. Every meter lands on a family board, where
-weekly goals, challenges, streaks, and badges keep everyone coming back.
+a monthly family goal, challenges, streaks, and badges keep everyone coming back.
 
 <p align="center">
   <img src="docs/images/dashboard.jpg" alt="Catch during a row, with Seinfeld playing in Netflix inside the Catch frame" width="820">
@@ -46,7 +46,7 @@ Screens from the current build, captured on a Hydrow tablet with a demo family.
 <table>
   <tr>
     <td width="50%"><img src="docs/images/summary.png" alt="Session summary"><br><sub><b>Session summary.</b> Time, distance, average split, stroke rate, strokes, power, and calories, plus every goal, challenge tier, and badge the row just earned.</sub></td>
-    <td width="50%"><img src="docs/images/challenges.png" alt="Goals and awards"><br><sub><b>Goals and awards.</b> Family weekly meters, monthly bronze, silver, and gold tiers, show-up weeks, and scenic routes. Always on: row and they fill in.</sub></td>
+    <td width="50%"><img src="docs/images/challenges.png" alt="Goals and awards"><br><sub><b>Goals and awards.</b> Family monthly meters, monthly bronze, silver, and gold tiers, show-up weeks, and scenic routes. Always on: row and they fill in.</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/images/profiles.png" alt="Who is rowing?"><br><sub><b>Who is rowing?</b> A profile for everyone in the house, with a photo or an illustrated avatar. Catch remembers each person's headphones and heart rate strap.</sub></td>
@@ -70,8 +70,8 @@ Screens from the current build, captured on a Hydrow tablet with a demo family.
   Each profile keeps its own history, badges, and Bluetooth devices.
 - **Heart rate.** Pair a Bluetooth heart rate strap once and Catch connects it
   whenever that person rows, with live heart rate and zone.
-- **Goals, challenges, and badges.** A weekly family leaderboard with last
-  week's winner, family weekly and monthly goals, tiered challenges, and
+- **Goals, challenges, and badges.** A monthly family leaderboard in meters,
+  with last week's winner, a monthly family goal, tiered challenges, and
   distance and streak badges.
 - **Session summary.** Finish a row and see the whole session, plus everything
   it earned, at a glance.

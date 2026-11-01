@@ -20,6 +20,11 @@ object Formatters {
     fun meters(value: Float): String =
         String.format(Locale.US, "%,.0f", value)
 
+    /** Distance label in meters. Callers should not append another unit. */
+    fun metersLabel(value: Float): String = "${meters(value)} m"
+
+    fun containsMilesUnit(text: String): Boolean = MILES_UNIT.containsMatchIn(text)
+
     fun spm(value: Float?): String =
         if (value == null) "--" else String.format(Locale.US, "%.0f", value)
 
@@ -29,9 +34,6 @@ object Formatters {
     fun kcal(value: Float?): String =
         if (value == null) "--" else String.format(Locale.US, "%.0f", value)
 
-    fun milesFromMeters(meters: Float): String =
-        String.format(Locale.US, "%.1f", meters / 1609.344f)
-
     fun zoneLabel(zone: Int?): String = when (zone) {
         1 -> "1 Easy"
         2 -> "2 Light"
@@ -40,4 +42,6 @@ object Formatters {
         5 -> "5 Max"
         else -> "--"
     }
+
+    private val MILES_UNIT = Regex("""(?i)(?:^|[^A-Za-z])(?:mi|mile|miles)(?:[^A-Za-z]|$)""")
 }

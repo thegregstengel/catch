@@ -23,9 +23,10 @@ import androidx.room.migration.AutoMigrationSpec
         ChallengeParticipationEntity::class,
         ChallengeWeekWinnerEntity::class,
     ],
-    version = 5,
+    version = 6,
     autoMigrations = [
         AutoMigration(from = 4, to = 5, spec = CatchDatabase.DropChromeMode::class),
+        AutoMigration(from = 5, to = 6),
     ],
     exportSchema = true,
 )

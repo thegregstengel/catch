@@ -6,6 +6,25 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- Catch Settings has one Save button. Save applies the PIN, the monthly family
+  goal, the app grid, and the update channel, then returns to the home dashboard.
+- A 4-digit PIN for Catch Settings. After it is saved, Catch Settings, other
+  profiles, household reset, and the family goal ask for it. A rower can still
+  open their own profile without the PIN. The PIN does not lock Android Settings.
+- Each profile can reset that rower's stats. Catch Settings can reset the whole
+  household's metrics. Both ask you to confirm, and name what will be erased,
+  before anything is deleted.
+
+### Changed
+
+- Weekly goals and challenges run from Sunday to the next Sunday, in the tablet
+  timezone (America/New_York), matching the rowing calendar. Monthly goals and
+  challenges run from the first of the month to the next first.
+- The family goal is monthly. Set it in meters in Catch Settings.
+- Distance is shown in meters.
+
 ## [2026.11.01]
 
 ### Added

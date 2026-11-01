@@ -195,7 +195,7 @@ private fun GoalCardView(card: ChallengeCard) {
                 Text(
                     card.def.tiers.joinToString(" · ") { tier ->
                         val mark = if (card.progressValue >= tier.threshold ||
-                            (card.def.metric == ChallengeCatalog.Metric.FamilyMetersWeek &&
+                            (card.def.metric == ChallengeCatalog.Metric.FamilyMetersMonth &&
                                 card.completed)
                         ) {
                             "✓"
@@ -280,10 +280,10 @@ private fun progressLabel(card: ChallengeCard): String {
     val p = card.progressValue
     val t = card.targetValue
     return when (card.def.metric) {
-        ChallengeCatalog.Metric.FamilyMetersWeek,
+        ChallengeCatalog.Metric.FamilyMetersMonth,
         ChallengeCatalog.Metric.ProfileMetersMonth,
         ChallengeCatalog.Metric.LifetimeMeters,
-        -> "${Formatters.meters(p)} / ${Formatters.meters(t)} m"
+        -> "${Formatters.metersLabel(p)} / ${Formatters.metersLabel(t)}"
         ChallengeCatalog.Metric.WorkoutDaysWeek,
         ChallengeCatalog.Metric.DistinctWorkoutDays,
         -> "${p.toInt()} / ${t.toInt()} days"

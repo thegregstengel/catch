@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import app.catchrower.data.CatchRepository
 import app.catchrower.data.ChallengeCard
 import app.catchrower.data.FamilyBoardSnapshot
+import app.catchrower.data.HouseholdGate
 import app.catchrower.data.RowingCalendar
+import app.catchrower.data.StatsReset
 import app.catchrower.data.YearInReview
 import app.catchrower.data.YearReviewPrefs
 import app.catchrower.data.db.AppSettingsEntity
@@ -29,6 +31,7 @@ import app.catchrower.update.UpdateChecker
 import app.catchrower.update.UpdateInstaller
 import app.catchrower.update.UpdatePrefs
 import app.catchrower.update.UpdateState
+import app.catchrower.ui.settings.SettingsForm
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -130,6 +133,10 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     private val _sessionSummary = MutableStateFlow<SessionSummary?>(null)
     private val yearReviewPrefs = YearReviewPrefs(app)
     private var activeProfileId: Long? = null
+    /** Last rower who opened a profile. Survives the wake screen clearing the active id. */
+    private var ownProfileId: Long? = null
+    /** True after the PIN (or an unset PIN) opened Catch Settings, until that screen closes. */
+    private var settingsUnlocked = false
     private var timezoneId: String = "America/New_York"
     private var challengesReturn: CatchDestination = CatchDestination.Dashboard
     val sessionSummary: StateFlow<SessionSummary?> = _sessionSummary.asStateFlow()
@@ -231,6 +238,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             repo.ensureSettings()
             val s = repo.getSettings()
+            if (ownProfileId == null) ownProfileId = s.activeProfileId
             _destination.value = if (s.onboardingComplete) {
                 CatchDestination.ProfilePicker
             } else {
@@ -265,6 +273,9 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             repo.observeSettings().collect { settings ->
                 timezoneId = settings?.timezoneId ?: "America/New_York"
+                if (ownProfileId == null && settings?.activeProfileId != null) {
+                    ownProfileId = settings.activeProfileId
+                }
                 publishYearInReview()
             }
         }
@@ -312,6 +323,8 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
                 _destination.value = CatchDestination.Setup
                 return@launch
             }
+            if (ownProfileId == null) ownProfileId = s.activeProfileId
+            settingsUnlocked = false
             endWorkoutIfNeeded()
             repo.clearActiveProfile()
             _destination.value = CatchDestination.ProfilePicker
@@ -319,7 +332,24 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun selectProfile(profile: ProfileEntity) {
+    fun isOwnProfile(profileId: Long): Boolean =
+        HouseholdGate.isOwn(profileId, ownProfileId ?: uiState.value.settings?.activeProfileId)
+
+    fun allow(action: HouseholdGate.Action, enteredPin: String?): Boolean {
+        val pinOk = HouseholdGate.matches(currentPin(), enteredPin.orEmpty())
+        val inSettings = settingsUnlocked && _destination.value == CatchDestination.Settings
+        val accepted = pinOk || (inSettings && action != HouseholdGate.Action.OpenCatchSettings)
+        return HouseholdGate.allowed(action, pinConfigured(), accepted)
+    }
+
+    fun selectProfile(profile: ProfileEntity, enteredPin: String? = null) {
+        val action = if (isOwnProfile(profile.id)) {
+            HouseholdGate.Action.OpenOwnProfile
+        } else {
+            HouseholdGate.Action.OpenOtherProfile
+        }
+        if (!allow(action, enteredPin)) return
+        ownProfileId = profile.id
         viewModelScope.launch {
             repo.setActiveProfile(profile.id)
             _showBtPicker.value = true
@@ -345,8 +375,13 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun openAddProfile(show: Boolean = true) {
-        _showAddProfile.value = show
+    fun openAddProfile(show: Boolean = true, enteredPin: String? = null) {
+        if (!show) {
+            _showAddProfile.value = false
+            return
+        }
+        if (!allow(HouseholdGate.Action.AddProfile, enteredPin)) return
+        _showAddProfile.value = true
     }
 
     fun createProfile(
@@ -390,6 +425,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             if (name.isBlank()) return@launch
             val id = repo.addProfile(name, photoUri, weightKg, ageYears, sex)
+            ownProfileId = id
             repo.updateSettings { it.copy(onboardingComplete = true, activeProfileId = id) }
             _showAddProfile.value = false
             _showBtPicker.value = false
@@ -404,7 +440,9 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         _setupStepIndex.value = index.coerceAtLeast(0)
     }
 
-    fun goCatchSettings() {
+    fun openCatchSettings(enteredPin: String? = null) {
+        if (!allow(HouseholdGate.Action.OpenCatchSettings, enteredPin)) return
+        settingsUnlocked = true
         _destination.value = CatchDestination.Settings
     }
 
@@ -425,6 +463,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun goChallenges() {
+        if (_destination.value == CatchDestination.Settings) settingsUnlocked = false
         challengesReturn = if (_destination.value == CatchDestination.Profile) {
             CatchDestination.Profile
         } else {
@@ -466,6 +505,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun leaveCatchSettings() {
+        settingsUnlocked = false
         viewModelScope.launch {
             val s = repo.getSettings()
             _destination.value = when {
@@ -599,14 +639,60 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
-    fun setWeeklyGoalMiles(miles: Float) {
-        if (miles <= 0f) return
-        viewModelScope.launch { repo.setWeeklyFamilyGoal((miles * METERS_PER_MILE).toInt()) }
+    fun saveCatchSettings(parsed: SettingsForm.Parsed) {
+        if (_destination.value != CatchDestination.Settings) return
+        if (!allow(HouseholdGate.Action.EditFamilyGoal, null)) return
+        viewModelScope.launch {
+            repo.updateSettings {
+                it.copy(
+                    monthlyFamilyGoalMeters = parsed.monthlyGoalMeters.coerceAtLeast(SettingsForm.MIN_GOAL_METERS),
+                    disabledAppPackages = parsed.disabledAppPackages.joinToString(","),
+                    settingsPin = parsed.settingsPin,
+                )
+            }
+            if (parsed.updateChannel != _updateChannel.value) {
+                updatePrefs.channel = parsed.updateChannel
+                _updateChannel.value = parsed.updateChannel
+                checkForUpdate()
+            }
+            leaveCatchSettings()
+        }
     }
 
-    fun setMonthlyGoalMiles(miles: Float) {
-        if (miles <= 0f) return
-        viewModelScope.launch { repo.setMonthlyFamilyGoal((miles * METERS_PER_MILE).toInt()) }
+    fun resetProfileStats(profileId: Long, confirmed: Boolean) {
+        val decision = StatsReset.decide(StatsReset.Target.Profile, profileId, confirmed)
+        if (decision !is StatsReset.Decision.EraseProfile) return
+        if (profileId != (uiState.value.activeProfile?.id ?: activeProfileId)) return
+        viewModelScope.launch {
+            if (activeProfileId == profileId) {
+                _workoutId.value = null
+                rower.resetSession()
+            }
+            repo.resetProfileStats(profileId)
+            if (activeProfileId == profileId) {
+                _workoutId.value = repo.startWorkout(profileId)
+                refreshChallengeCards()
+            }
+            _statusMessage.value = "Stats reset"
+        }
+    }
+
+    fun resetHouseholdMetrics(confirmed: Boolean) {
+        val decision = StatsReset.decide(StatsReset.Target.Household, null, confirmed)
+        if (decision !is StatsReset.Decision.EraseHousehold) return
+        if (_destination.value != CatchDestination.Settings) return
+        if (!allow(HouseholdGate.Action.ResetHouseholdMetrics, null)) return
+        viewModelScope.launch {
+            _workoutId.value = null
+            rower.resetSession()
+            repo.resetHouseholdMetrics()
+            val profileId = uiState.value.activeProfile?.id ?: activeProfileId
+            if (profileId != null) {
+                _workoutId.value = repo.startWorkout(profileId)
+            }
+            refreshChallengeCards()
+            _statusMessage.value = "Household metrics reset"
+        }
     }
 
     fun toggleAppEnabled(packageId: String, enabled: Boolean) {
@@ -738,8 +824,11 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         super.onCleared()
     }
 
+    private fun currentPin(): String = uiState.value.settings?.settingsPin.orEmpty()
+
+    private fun pinConfigured(): Boolean = HouseholdGate.isConfigured(currentPin())
+
     private companion object {
-        const val METERS_PER_MILE = 1609.344f
         const val UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
     }
 

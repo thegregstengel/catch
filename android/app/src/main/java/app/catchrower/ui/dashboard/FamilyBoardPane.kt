@@ -27,8 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.catchrower.R
 import app.catchrower.data.BadgeRules
 import app.catchrower.data.ChallengeCard
 import app.catchrower.data.FamilyBoardSnapshot
@@ -96,13 +98,13 @@ fun FamilyBoardPane(
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Text("This week's goal", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.family_goal_this_month), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
             val total = board?.familyTotalMeters ?: 0f
-            val goal = (board?.weeklyGoalMeters ?: 500_000).toFloat()
+            val goal = (board?.monthlyGoalMeters ?: 2_000_000).toFloat()
             val progress = (total / goal).coerceIn(0f, 1f)
             Text(
-                "${Formatters.meters(total)} / ${Formatters.meters(goal)} m",
+                "${Formatters.metersLabel(total)} / ${Formatters.metersLabel(goal)}",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(6.dp))
@@ -121,7 +123,7 @@ fun FamilyBoardPane(
                 style = MaterialTheme.typography.labelMedium,
             )
             val nextGoal = challengeCards
-                .filter { !it.completed && it.def.id != "week_meters_family" }
+                .filter { !it.completed && it.def.id != "month_meters_family" }
                 .maxByOrNull { it.progressFraction }
             if (nextGoal != null) {
                 Spacer(Modifier.height(10.dp))
@@ -188,7 +190,7 @@ private fun LeaderRow(
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                "${Formatters.meters(meters)} m",
+                Formatters.metersLabel(meters),
                 style = MaterialTheme.typography.titleMedium,
                 color = CatchAccent,
             )

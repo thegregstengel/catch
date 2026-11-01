@@ -97,7 +97,7 @@ fun ScenicStrip(
                 }
                 Text(
                     text = if (goal != null) {
-                        "${Formatters.meters(done)} / ${Formatters.meters(goal)} m"
+                        "${Formatters.metersLabel(done)} / ${Formatters.metersLabel(goal)}"
                     } else {
                         stringResource(R.string.session_goal_unset)
                     },
