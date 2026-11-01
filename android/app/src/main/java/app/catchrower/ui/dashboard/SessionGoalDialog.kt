@@ -50,7 +50,7 @@ fun SessionGoalDialog(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    "${Formatters.meters(meters)} m  ·  ${Formatters.milesFromMeters(meters)} mi",
+                    Formatters.metersLabel(meters),
                     style = MaterialTheme.typography.headlineMedium,
                     color = CatchAccent,
                 )

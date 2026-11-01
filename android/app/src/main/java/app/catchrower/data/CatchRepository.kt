@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.time.Instant
-import java.time.YearMonth
 import java.time.ZoneId
 
 data class WeeklyBoardEntry(
@@ -26,7 +25,7 @@ data class WeeklyBoardEntry(
 data class FamilyBoardSnapshot(
     val entries: List<WeeklyBoardEntry>,
     val familyTotalMeters: Float,
-    val weeklyGoalMeters: Int,
+    val monthlyGoalMeters: Int,
     val daysLeft: Int,
     val weekStartEpochMs: Long,
     val lastWeekWinnerName: String? = null,
@@ -84,13 +83,14 @@ class CatchRepository(context: Context) {
             weekWinners.observeLatest(),
         ) { profileList, s, allWorkouts, lastWinner ->
             val zone = runCatching { ZoneId.of(s?.timezoneId ?: "America/New_York") }
-                .getOrDefault(ZoneId.systemDefault())
+                .getOrDefault(WeekRollover.TABLET_ZONE)
+            val monthStart = WeekRollover.monthStartEpochMs(zoneId = zone)
             val weekStart = WeekRollover.weekStartEpochMs(zoneId = zone)
-            val goal = s?.weeklyFamilyGoalMeters ?: 500_000
-            val daysLeft = WeekRollover.daysLeftInWeek(zoneId = zone)
+            val goal = s?.monthlyFamilyGoalMeters ?: 2_000_000
+            val daysLeft = WeekRollover.daysLeftInMonth(zoneId = zone)
             val withMeters = profileList.map { p ->
                 val meters = allWorkouts
-                    .filter { it.profileId == p.id && it.startedAtEpochMs >= weekStart }
+                    .filter { it.profileId == p.id && it.startedAtEpochMs >= monthStart }
                     .sumOf { it.distanceMeters.toDouble() }
                     .toFloat()
                 p to meters
@@ -258,10 +258,10 @@ class CatchRepository(context: Context) {
         }
 
         val s = ensureSettings()
-        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(ZoneId.systemDefault())
-        val familyAfter = workouts.familyMetersSince(WeekRollover.weekStartEpochMs(zoneId = zone))
+        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(WeekRollover.TABLET_ZONE)
+        val familyAfter = workouts.familyMetersSince(WeekRollover.monthStartEpochMs(zoneId = zone))
         val familyBefore = familyAfter - ended.distanceMeters
-        val goal = s.weeklyFamilyGoalMeters
+        val goal = s.monthlyFamilyGoalMeters
         return FinishOutcome(
             badgeTitles = badgeTitles,
             challengeTiers = tierTitles,
@@ -277,10 +277,10 @@ class CatchRepository(context: Context) {
             )
         }
         val s = ensureSettings()
-        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(ZoneId.systemDefault())
-        val weekStart = WeekRollover.weekStartEpochMs(zoneId = zone)
-        val familyTotal = workouts.familyMetersSince(weekStart)
-        if (familyTotal >= s.weeklyFamilyGoalMeters) {
+        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(WeekRollover.TABLET_ZONE)
+        val monthStart = WeekRollover.monthStartEpochMs(zoneId = zone)
+        val familyTotal = workouts.familyMetersSince(monthStart)
+        if (familyTotal >= s.monthlyFamilyGoalMeters) {
             badges.insertIgnore(
                 BadgeAwardEntity(profileId = profileId, badgeId = "family_row"),
             )
@@ -350,7 +350,7 @@ class CatchRepository(context: Context) {
         tier: ChallengeCatalog.Tier,
     ): Boolean {
         return when (def.metric) {
-            ChallengeCatalog.Metric.FamilyMetersWeek ->
+            ChallengeCatalog.Metric.FamilyMetersMonth ->
                 progress >= target && tier.threshold >= 1f
             else -> progress >= tier.threshold
         }
@@ -361,12 +361,12 @@ class CatchRepository(context: Context) {
         profileId: Long,
     ): Pair<Float, Float> {
         val s = ensureSettings()
-        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(ZoneId.systemDefault())
+        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(WeekRollover.TABLET_ZONE)
         val windowStart = windowFor(def, zone, s).first
         return when (def.metric) {
-            ChallengeCatalog.Metric.FamilyMetersWeek -> {
+            ChallengeCatalog.Metric.FamilyMetersMonth -> {
                 val meters = workouts.familyMetersSince(windowStart)
-                meters to s.weeklyFamilyGoalMeters.toFloat()
+                meters to s.monthlyFamilyGoalMeters.toFloat()
             }
             ChallengeCatalog.Metric.ProfileMetersMonth -> {
                 val meters = workouts.metersSince(profileId, windowStart)
@@ -405,23 +405,22 @@ class CatchRepository(context: Context) {
     ): Triple<Long, Long?, Float> {
         val now = System.currentTimeMillis()
         return when (def.metric) {
-            ChallengeCatalog.Metric.FamilyMetersWeek,
-            ChallengeCatalog.Metric.WorkoutDaysWeek,
-            -> {
+            ChallengeCatalog.Metric.WorkoutDaysWeek -> {
                 val start = WeekRollover.weekStartEpochMs(now, zone)
                 val end = WeekRollover.weekEndExclusiveEpochMs(now, zone)
+                Triple(start, end, 7f)
+            }
+            ChallengeCatalog.Metric.FamilyMetersMonth,
+            ChallengeCatalog.Metric.ProfileMetersMonth,
+            -> {
+                val start = WeekRollover.monthStartEpochMs(now, zone)
+                val end = WeekRollover.monthEndExclusiveEpochMs(now, zone)
                 val target = when (def.metric) {
-                    ChallengeCatalog.Metric.FamilyMetersWeek ->
-                        settings.weeklyFamilyGoalMeters.toFloat()
-                    else -> 7f
+                    ChallengeCatalog.Metric.FamilyMetersMonth ->
+                        settings.monthlyFamilyGoalMeters.toFloat()
+                    else -> def.tiers.last().threshold
                 }
                 Triple(start, end, target)
-            }
-            ChallengeCatalog.Metric.ProfileMetersMonth -> {
-                val ym = YearMonth.now(zone)
-                val start = ym.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-                val end = ym.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-                Triple(start, end, def.tiers.last().threshold)
             }
             ChallengeCatalog.Metric.ScenicComplete,
             ChallengeCatalog.Metric.LifetimeMeters,
@@ -446,7 +445,7 @@ class CatchRepository(context: Context) {
 
     suspend fun archiveLastWeekWinnerIfNeeded() {
         val s = ensureSettings()
-        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(ZoneId.systemDefault())
+        val zone = runCatching { ZoneId.of(s.timezoneId) }.getOrDefault(WeekRollover.TABLET_ZONE)
         val currentWeekStart = WeekRollover.weekStartEpochMs(zoneId = zone)
         val previousStart = WeekRollover.weekStartEpochMs(
             nowEpochMs = currentWeekStart - 1,
@@ -570,6 +569,25 @@ class CatchRepository(context: Context) {
                 )
             }
         }
+    }
+
+    /** Erases one rower's sessions, awards, and challenge progress. The profile stays. */
+    suspend fun resetProfileStats(profileId: Long) {
+        workouts.deleteForProfile(profileId)
+        badges.deleteForProfile(profileId)
+        challenges.deleteForProfile(profileId)
+        weekWinners.deleteForProfile(profileId)
+    }
+
+    /**
+     * Erases every rower's sessions, awards, and challenge progress.
+     * Profiles, the settings PIN, and the family goal stay.
+     */
+    suspend fun resetHouseholdMetrics() {
+        workouts.deleteAll()
+        badges.deleteAll()
+        challenges.deleteAll()
+        weekWinners.deleteAll()
     }
 
     /** Wipes all personal Catch data on device. */

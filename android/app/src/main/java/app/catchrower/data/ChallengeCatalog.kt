@@ -12,7 +12,7 @@ object ChallengeCatalog {
     enum class Scope { Profile, Household }
 
     enum class Metric {
-        FamilyMetersWeek,
+        FamilyMetersMonth,
         ProfileMetersMonth,
         WorkoutDaysWeek,
         ScenicComplete,
@@ -40,16 +40,16 @@ object ChallengeCatalog {
 
     val ALL: List<Def> = listOf(
         Def(
-            id = "week_meters_family",
+            id = "month_meters_family",
             kind = Kind.Challenge,
-            title = "Family weekly meters",
-            blurb = "Hit the household weekly meters goal together.",
+            title = "Family monthly meters",
+            blurb = "Hit the household monthly meters goal together.",
             scope = Scope.Household,
-            metric = Metric.FamilyMetersWeek,
+            metric = Metric.FamilyMetersMonth,
             tiers = listOf(
-                Tier("chal_week_family", "Family week", 1f), // threshold = fraction of goal
+                Tier("chal_week_family", "Family month", 1f),
             ),
-            windowHint = "This week",
+            windowHint = "This month",
         ),
         Def(
             id = "month_meters_personal",

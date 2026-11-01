@@ -18,9 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,10 +43,12 @@ import androidx.compose.ui.unit.dp
 import app.catchrower.R
 import app.catchrower.data.BadgeRules
 import app.catchrower.data.RowingCalendar
+import app.catchrower.data.StatsReset
 import app.catchrower.data.YearInReview
 import app.catchrower.data.db.BadgeAwardEntity
 import app.catchrower.data.db.ProfileEntity
 import app.catchrower.data.db.WorkoutEntity
+import app.catchrower.ui.Formatters
 import app.catchrower.ui.components.GlassPanel
 import app.catchrower.ui.theme.CatchAccent
 import app.catchrower.ui.theme.CatchGold
@@ -56,7 +60,6 @@ import app.catchrower.ui.theme.CatchZone
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
-import java.util.Locale
 
 /**
  * One rower's month, stats, and awards. The calendar is this profile only.
@@ -69,10 +72,12 @@ fun ProfileScreen(
     timezoneId: String?,
     onBack: () -> Unit,
     onOpenChallenges: () -> Unit,
+    onResetStats: (Long) -> Unit,
 ) {
     val zone = remember(timezoneId) { RowingCalendar.zoneOf(timezoneId) }
     val today = remember(zone) { LocalDate.now(zone) }
     var month by remember(today) { mutableStateOf(RowingCalendar.initialMonth(today)) }
+    var confirmReset by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -147,9 +152,36 @@ fun ProfileScreen(
                         zone = zone,
                     )
                     AwardsPanel(badges = badges, onOpenChallenges = onOpenChallenges)
+                    OutlinedButton(onClick = { confirmReset = true }) {
+                        Text(stringResource(R.string.reset_stats))
+                    }
                 }
             }
         }
+    }
+
+    if (confirmReset && profile != null) {
+        val warning = StatsReset.warning(StatsReset.Target.Profile, profile.displayName)
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text(warning.title) },
+            text = { Text(warning.body) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmReset = false
+                        onResetStats(profile.id)
+                    },
+                ) {
+                    Text(stringResource(R.string.reset_stats))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmReset = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 }
 
@@ -317,7 +349,7 @@ private fun StatLine(stats: RowingCalendar.Stats) {
         Stat(stringResource(R.string.profile_stat_sessions), stats.sessions.toString(), Modifier.weight(1f))
         Stat(
             stringResource(R.string.profile_stat_distance),
-            "${formatMeters(stats.distanceMeters)} m",
+            Formatters.metersLabel(stats.distanceMeters),
             Modifier.weight(1.3f),
         )
         Stat(
@@ -384,8 +416,5 @@ private fun AwardsPanel(
         }
     }
 }
-
-private fun formatMeters(meters: Float): String =
-    String.format(Locale.US, "%,.0f", meters)
 
 private const val LB_PER_KG = 2.2046226218f

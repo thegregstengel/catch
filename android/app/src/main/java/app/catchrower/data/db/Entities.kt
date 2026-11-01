@@ -1,5 +1,6 @@
 package app.catchrower.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -51,11 +52,14 @@ data class AppSettingsEntity(
     val timezoneId: String = "America/New_York",
     val weeklyFamilyGoalMeters: Int = 500_000,
     val monthlyFamilyGoalMeters: Int = 2_000_000,
-    val scenicGoalMeters: Int = 12_875, // ~8.0 mi
+    val scenicGoalMeters: Int = 12_875,
     val scenicRouteName: String = "Lake Winnipesaukee, NH",
     val onboardingComplete: Boolean = false,
     /** Comma-separated package ids that should be hidden from the app grid. */
     val disabledAppPackages: String = "",
+    /** Four-digit household PIN. Empty until someone saves one in Catch Settings. */
+    @ColumnInfo(defaultValue = "''")
+    val settingsPin: String = "",
 )
 
 @Entity(

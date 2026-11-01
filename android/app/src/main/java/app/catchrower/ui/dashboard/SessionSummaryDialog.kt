@@ -43,8 +43,8 @@ fun SessionSummaryDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 val distance = buildString {
-                    append("${Formatters.meters(summary.distanceMeters)} m")
-                    summary.goalMeters?.let { append(" of ${Formatters.meters(it.toFloat())} m") }
+                    append(Formatters.metersLabel(summary.distanceMeters))
+                    summary.goalMeters?.let { append(" of ${Formatters.metersLabel(it.toFloat())}") }
                 }
                 StatGrid(
                     listOf(
@@ -97,7 +97,7 @@ private fun StatGrid(stats: List<Pair<String, String>>) {
 private fun Achievements(summary: SessionSummary) {
     val items = buildList {
         if (summary.goalReached) add(Icons.Outlined.Flag to "Session goal reached")
-        if (summary.familyGoalReached) add(Icons.Outlined.Groups to "Family weekly goal reached")
+        if (summary.familyGoalReached) add(Icons.Outlined.Groups to "Family monthly goal reached")
         summary.challengeTiers.forEach { add(Icons.Outlined.EmojiEvents to it) }
         summary.badges.forEach { add(Icons.Outlined.MilitaryTech to "Badge earned: $it") }
     }

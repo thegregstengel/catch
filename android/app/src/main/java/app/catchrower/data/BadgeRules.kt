@@ -17,7 +17,7 @@ object BadgeRules {
         BadgeDef("dist_25k", "25K Row", 25_000f),
         BadgeDef("dist_50k", "50K Row", 50_000f),
         BadgeDef("dist_100k", "100K Row", 100_000f),
-        BadgeDef("family_row", "Family Row", 0f), // awarded when weekly family goal met once
+        BadgeDef("family_row", "Family Row", 0f), // awarded when the monthly family goal is met
         BadgeDef("streak_3", "3-Day Streak", 0f),
         BadgeDef("streak_7", "7-Day Streak", 0f),
         BadgeDef("new_location", "New Location", 0f), // scenic session complete
