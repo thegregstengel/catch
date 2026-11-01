@@ -6,6 +6,8 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.11.01]
+
 ### Added
 
 - Brave, Prime Video, and Apple TV are on the home grid, with Netflix, Plex,
