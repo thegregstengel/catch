@@ -31,6 +31,8 @@ import app.catchrower.ui.dashboard.SessionSummaryDialog
 import app.catchrower.ui.profile.AddProfileDialog
 import app.catchrower.ui.profile.BtDevicePickerDialog
 import app.catchrower.ui.profile.ProfilePickerScreen
+import app.catchrower.ui.profile.ProfileScreen
+import app.catchrower.ui.profile.YearInReviewDialog
 import app.catchrower.ui.settings.CatchSettingsScreen
 import app.catchrower.ui.setup.SetupScreen
 import app.catchrower.ui.theme.CatchNavy
@@ -179,6 +181,7 @@ private fun CatchRoot(
             onDismissSessionGoal = viewModel::dismissSessionGoalDialog,
             sessionGoalInitialMeters = state.sessionGoalMeters ?: 2_000,
             onOpenChallenges = viewModel::goChallenges,
+            onOpenProfile = viewModel::goProfile,
         )
         CatchDestination.Setup -> SetupScreen(
             state = state,
@@ -217,11 +220,30 @@ private fun CatchRoot(
             badges = state.badges,
             onBack = viewModel::leaveChallenges,
         )
+        CatchDestination.Profile -> ProfileScreen(
+            profile = state.activeProfile,
+            workouts = state.workouts,
+            badges = state.badges,
+            timezoneId = state.settings?.timezoneId,
+            onBack = viewModel::leaveProfile,
+            onOpenChallenges = viewModel::goChallenges,
+        )
     }
     }
 
     val summary by viewModel.sessionSummary.collectAsStateWithLifecycle()
     summary?.let { SessionSummaryDialog(summary = it, onDone = viewModel::dismissSessionSummary) }
+
+    val review = state.yearInReview
+    if (
+        summary == null &&
+        review != null &&
+        (state.destination == CatchDestination.Dashboard || state.destination == CatchDestination.Profile) &&
+        !state.showBtPicker &&
+        !state.showSessionGoalDialog
+    ) {
+        YearInReviewDialog(summary = review, onDone = viewModel::dismissYearInReview)
+    }
 
     if (state.showAddProfile) {
         AddProfileDialog(

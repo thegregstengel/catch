@@ -7,10 +7,14 @@ import androidx.lifecycle.viewModelScope
 import app.catchrower.data.CatchRepository
 import app.catchrower.data.ChallengeCard
 import app.catchrower.data.FamilyBoardSnapshot
+import app.catchrower.data.RowingCalendar
+import app.catchrower.data.YearInReview
+import app.catchrower.data.YearReviewPrefs
 import app.catchrower.data.db.AppSettingsEntity
 import app.catchrower.data.db.BadgeAwardEntity
 import app.catchrower.data.db.ProfileBtDeviceEntity
 import app.catchrower.data.db.ProfileEntity
+import app.catchrower.data.db.WorkoutEntity
 import app.catchrower.hr.HeartRateMonitor
 import app.catchrower.media.CatchMediaSession
 import app.catchrower.media.StreamingApp
@@ -33,9 +37,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.LocalDate
 
 enum class CatchDestination {
     ProfilePicker,
@@ -43,6 +49,7 @@ enum class CatchDestination {
     Setup,
     Settings,
     Challenges,
+    Profile,
 }
 
 /** Final numbers and new awards for the session that just finished. */
@@ -88,6 +95,10 @@ data class CatchUiState(
     /** Session distance goal in meters; null until the rower picks one. */
     val sessionGoalMeters: Int? = null,
     val showSessionGoalDialog: Boolean = false,
+    /** Saved workouts for the active profile. The calendar and year in review read these. */
+    val workouts: List<WorkoutEntity> = emptyList(),
+    /** Set during 1-7 January when the previous year has saved sessions. */
+    val yearInReview: YearInReview.Summary? = null,
 )
 
 class CatchViewModel(app: Application) : AndroidViewModel(app) {
@@ -114,7 +125,13 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     private val _challengeCards = MutableStateFlow<List<ChallengeCard>>(emptyList())
     private val _sessionGoalMeters = MutableStateFlow<Int?>(null)
     private val _showSessionGoalDialog = MutableStateFlow(false)
+    private val _workouts = MutableStateFlow<List<WorkoutEntity>>(emptyList())
+    private val _yearInReview = MutableStateFlow<YearInReview.Summary?>(null)
     private val _sessionSummary = MutableStateFlow<SessionSummary?>(null)
+    private val yearReviewPrefs = YearReviewPrefs(app)
+    private var activeProfileId: Long? = null
+    private var timezoneId: String = "America/New_York"
+    private var challengesReturn: CatchDestination = CatchDestination.Dashboard
     val sessionSummary: StateFlow<SessionSummary?> = _sessionSummary.asStateFlow()
     private val updatePrefs = UpdatePrefs(app)
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
@@ -162,7 +179,14 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         ) { installed, framed, embedded, embedError, cards ->
             Quint(installed, framed, embedded, embedError, cards)
         },
-        combine(_sessionGoalMeters, _showSessionGoalDialog, ::Pair),
+        combine(
+            _sessionGoalMeters,
+            _showSessionGoalDialog,
+            _workouts,
+            _yearInReview,
+        ) { goal, showGoal, workouts, review ->
+            Quad(goal, showGoal, workouts, review)
+        },
     ) { a, b, c, d, e ->
         val hr = c.e
         val telem = b.b.copy(heartRateBpm = hr ?: b.b.heartRateBpm)
@@ -186,8 +210,10 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
             embeddedPackage = d.c,
             embedError = d.d,
             challengeCards = d.e,
-            sessionGoalMeters = e.first,
-            showSessionGoalDialog = e.second,
+            sessionGoalMeters = e.a,
+            showSessionGoalDialog = e.b,
+            workouts = e.c,
+            yearInReview = e.d,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CatchUiState())
 
@@ -235,6 +261,28 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
                     else repo.observeBadges(profile.id)
                 }
                 .collect { _badges.value = it }
+        }
+        viewModelScope.launch {
+            repo.observeSettings().collect { settings ->
+                timezoneId = settings?.timezoneId ?: "America/New_York"
+                publishYearInReview()
+            }
+        }
+        viewModelScope.launch {
+            @OptIn(ExperimentalCoroutinesApi::class)
+            repo.observeActiveProfile()
+                .flatMapLatest { profile ->
+                    if (profile == null) {
+                        flowOf<Pair<Long?, List<WorkoutEntity>>>(null to emptyList())
+                    } else {
+                        repo.observeWorkouts(profile.id).map { profile.id to it }
+                    }
+                }
+                .collect { (profileId, workouts) ->
+                    activeProfileId = profileId
+                    _workouts.value = workouts
+                    publishYearInReview()
+                }
         }
         viewModelScope.launch {
             rower.telemetry.collect { t ->
@@ -360,7 +408,28 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         _destination.value = CatchDestination.Settings
     }
 
+    fun goProfile() {
+        if (uiState.value.activeProfile == null && activeProfileId == null) return
+        _destination.value = CatchDestination.Profile
+    }
+
+    fun leaveProfile() {
+        _destination.value = CatchDestination.Dashboard
+    }
+
+    fun dismissYearInReview() {
+        val summary = _yearInReview.value ?: return
+        val profileId = activeProfileId ?: return
+        yearReviewPrefs.dismiss(profileId, summary.year)
+        _yearInReview.value = null
+    }
+
     fun goChallenges() {
+        challengesReturn = if (_destination.value == CatchDestination.Profile) {
+            CatchDestination.Profile
+        } else {
+            CatchDestination.Dashboard
+        }
         viewModelScope.launch {
             refreshChallengeCards()
             _destination.value = CatchDestination.Challenges
@@ -368,7 +437,23 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun leaveChallenges() {
-        _destination.value = CatchDestination.Dashboard
+        _destination.value = challengesReturn
+    }
+
+    private fun publishYearInReview() {
+        val profileId = activeProfileId
+        if (profileId == null) {
+            _yearInReview.value = null
+            return
+        }
+        val zone = RowingCalendar.zoneOf(timezoneId)
+        val today = LocalDate.now(zone)
+        val year = YearInReview.reviewYear(today)
+        if (year == null || yearReviewPrefs.isDismissed(profileId, year)) {
+            _yearInReview.value = null
+            return
+        }
+        _yearInReview.value = YearInReview.summarize(profileId, _workouts.value, year, zone)
     }
 
     private suspend fun refreshChallengeCards() {
@@ -469,6 +554,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     fun onResumeCatch() {
         refreshInstalledApps()
         checkForUpdateIfDue()
+        publishYearInReview()
     }
 
     fun launchStreamingApp(app: StreamingApp) {
@@ -663,5 +749,12 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         val c: C,
         val d: D,
         val e: E,
+    )
+
+    private data class Quad<A, B, C, D>(
+        val a: A,
+        val b: B,
+        val c: C,
+        val d: D,
     )
 }

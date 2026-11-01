@@ -60,4 +60,20 @@
     <string name="export_json">Export JSON</string>
     <string name="export_csv">Export CSV</string>
     <string name="privacy_wipe">Wipe personal data</string>
+    <string name="profile">Profile</string>
+    <string name="profile_pick_someone">Pick a profile to see their month.</string>
+    <string name="profile_age">Age %1$d</string>
+    <string name="profile_weight_lb">%1$d lb</string>
+    <string name="profile_this_month">This month</string>
+    <string name="profile_all_sessions">All sessions</string>
+    <string name="profile_stat_days">Days</string>
+    <string name="profile_stat_sessions">Sessions</string>
+    <string name="profile_stat_distance">Distance</string>
+    <string name="profile_stat_time">Time</string>
+    <string name="profile_awards">Awards</string>
+    <string name="profile_no_awards">No awards yet. Keep rowing.</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_days_rowed">Days you rowed</string>
+    <string name="calendar_day_rowed">Rowed on day %1$d</string>
 </resources>

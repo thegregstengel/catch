@@ -68,6 +68,9 @@ class CatchRepository(context: Context) {
     fun observeBadges(profileId: Long): Flow<List<BadgeAwardEntity>> =
         badges.observeForProfile(profileId)
 
+    fun observeWorkouts(profileId: Long): Flow<List<WorkoutEntity>> =
+        workouts.observeForProfile(profileId)
+
     fun observeChallengeParticipations(profileId: Long): Flow<List<ChallengeParticipationEntity>> =
         challenges.observeForProfile(profileId)
 
