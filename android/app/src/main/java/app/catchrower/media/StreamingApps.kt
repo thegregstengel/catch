@@ -26,6 +26,16 @@ object StreamingApps {
             ),
         ),
         StreamingApp("disney", "Disney+", listOf("com.disney.disneyplus")),
+        StreamingApp("brave", "Brave", listOf("com.brave.browser")),
+        StreamingApp(
+            "prime",
+            "Prime Video",
+            listOf(
+                "com.amazon.avod.thirdpartyclient",
+                "com.amazon.amazonvideo.livingroom",
+            ),
+        ),
+        StreamingApp("appletv", "Apple TV", listOf("com.apple.atve.androidtv.appletv")),
     )
 
     /** Snapshot of which day-one apps are installed (by StreamingApp.id). */

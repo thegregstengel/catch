@@ -175,8 +175,8 @@ you don't sign in to Google on the rower.
    **Catch Settings > Home and apps**. If Aurora Store isn't on the tablet yet,
    download it from [auroraoss.com](https://auroraoss.com/).
 1. Choose **Anonymous** when Aurora Store asks how to sign in.
-1. Install Netflix, Plex, Paramount+, and Disney+, then sign in to each app
-   with your own streaming account.
+1. Install Netflix, Plex, Paramount+, Disney+, Brave, Prime Video, and Apple TV,
+   then sign in to each app with your own account.
 1. To keep the apps current, open Aurora Store's **Updates** tab now and then,
    or turn on automatic updates in its settings.
 
