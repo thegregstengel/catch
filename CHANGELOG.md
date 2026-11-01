@@ -6,6 +6,8 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.11.01.2]
+
 ### Added
 
 - Catch Settings has one Save button. Save applies the PIN, the monthly family
