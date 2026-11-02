@@ -60,6 +60,12 @@ data class AppSettingsEntity(
     /** Four-digit household PIN. Empty until someone saves one in Catch Settings. */
     @ColumnInfo(defaultValue = "''")
     val settingsPin: String = "",
+    /**
+     * Darken the screen after the rower has been idle. On until someone
+     * turns it off in Catch Settings and taps Save.
+     */
+    @ColumnInfo(defaultValue = "1")
+    val screenOffWhenIdle: Boolean = true,
 )
 
 @Entity(
