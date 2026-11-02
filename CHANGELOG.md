@@ -6,6 +6,14 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- The screen goes dark after 5 minutes when nobody is rowing or tapping.
+  A show in the pane keeps it on. Tap to wake it. Catch stays where you
+  left it, including a workout in progress. The switch is on the Rower
+  card in Catch Settings, behind the settings PIN, and it applies when
+  you tap Save. It is on by default.
+
 ## [2026.11.01.3]
 
 ### Changed

@@ -309,6 +309,13 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Android delivered [android.content.Intent.ACTION_USER_PRESENT]: the power
+     * button, or the system screen timeout. That returns to "Who is rowing?"
+     * and ends the workout. The idle cover must not call this. A tap on that
+     * cover wakes through [app.catchrower.ui.idle.ScreenIdle.onTap] and leaves
+     * the session where it was.
+     */
     fun onUserPresent() {
         viewModelScope.launch {
             val s = repo.getSettings()
@@ -625,6 +632,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
                     monthlyFamilyGoalMeters = parsed.monthlyGoalMeters.coerceAtLeast(SettingsForm.MIN_GOAL_METERS),
                     disabledAppPackages = parsed.disabledAppPackages.joinToString(","),
                     settingsPin = parsed.settingsPin,
+                    screenOffWhenIdle = parsed.screenOffWhenIdle,
                 )
             }
             if (parsed.updateChannel != _updateChannel.value) {

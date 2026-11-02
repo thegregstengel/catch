@@ -47,6 +47,7 @@ import app.catchrower.ui.theme.CatchAccent
 import app.catchrower.ui.theme.CatchNavy
 import app.catchrower.ui.theme.CatchNavyElevated
 import app.catchrower.ui.theme.CatchTextSecondary
+import app.catchrower.ui.idle.IdleTimeout
 import app.catchrower.update.UpdateChannel
 import app.catchrower.update.UpdateState
 
@@ -80,9 +81,11 @@ fun CatchSettingsScreen(
     val savedGoal = state.settings?.monthlyFamilyGoalMeters ?: 2_000_000
     val savedPin = state.settings?.settingsPin.orEmpty()
     val savedDisabledKey = state.settings?.disabledAppPackages.orEmpty()
+    val savedScreenOff = state.settings?.screenOffWhenIdle ?: true
     var goalText by remember(savedGoal) { mutableStateOf(savedGoal.toString()) }
     var pinText by remember(savedPin) { mutableStateOf("") }
     var channel by remember(updateChannel) { mutableStateOf(updateChannel) }
+    var screenOffWhenIdle by remember(savedScreenOff) { mutableStateOf(savedScreenOff) }
     var disabled by remember(savedDisabledKey) {
         mutableStateOf(
             savedDisabledKey.split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet(),
@@ -97,6 +100,7 @@ fun CatchSettingsScreen(
                 updateChannel = channel,
                 pinText = pinText,
                 existingPin = savedPin,
+                screenOffWhenIdle = screenOffWhenIdle,
             )
         ) {
             is SettingsForm.ParseResult.Ok -> {
@@ -234,6 +238,32 @@ fun CatchSettingsScreen(
                             "${state.telemetry.resistance}",
                             style = MaterialTheme.typography.titleMedium,
                             color = CatchAccent,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.settings_screen_off),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                stringResource(
+                                    R.string.settings_screen_off_body,
+                                    IdleTimeout.TIMEOUT_MINUTES,
+                                ),
+                                color = CatchTextSecondary,
+                            )
+                        }
+                        Switch(
+                            checked = screenOffWhenIdle,
+                            onCheckedChange = { screenOffWhenIdle = it },
                         )
                     }
                 }

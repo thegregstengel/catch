@@ -15,6 +15,7 @@ object SettingsForm {
         val disabledAppPackages: Set<String>,
         val updateChannel: UpdateChannel,
         val settingsPin: String,
+        val screenOffWhenIdle: Boolean,
     )
 
     sealed class ParseResult {
@@ -28,6 +29,7 @@ object SettingsForm {
         updateChannel: UpdateChannel,
         pinText: String,
         existingPin: String,
+        screenOffWhenIdle: Boolean,
     ): ParseResult {
         val goal = monthlyGoalText.toIntOrNull()
         if (goal == null || goal < MIN_GOAL_METERS) {
@@ -46,6 +48,7 @@ object SettingsForm {
                 disabledAppPackages = disabledAppPackages,
                 updateChannel = updateChannel,
                 settingsPin = pin,
+                screenOffWhenIdle = screenOffWhenIdle,
             ),
         )
     }

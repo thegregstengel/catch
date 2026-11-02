@@ -24,19 +24,31 @@ class SettingsFormTest {
 
     @Test
     fun invalidGoalOrPinIsRejected() {
-        assertTrue(SettingsForm.parse("999", emptySet(), UpdateChannel.Stable, "", "") is SettingsForm.ParseResult.Invalid)
-        assertTrue(SettingsForm.parse("miles", emptySet(), UpdateChannel.Stable, "", "") is SettingsForm.ParseResult.Invalid)
-        assertTrue(SettingsForm.parse("5000", emptySet(), UpdateChannel.Stable, "12", "") is SettingsForm.ParseResult.Invalid)
-        assertTrue(SettingsForm.parse("5000", emptySet(), UpdateChannel.Beta, "12ab", "1234") is SettingsForm.ParseResult.Invalid)
+        assertTrue(SettingsForm.parse("999", emptySet(), UpdateChannel.Stable, "", "", true) is SettingsForm.ParseResult.Invalid)
+        assertTrue(SettingsForm.parse("miles", emptySet(), UpdateChannel.Stable, "", "", true) is SettingsForm.ParseResult.Invalid)
+        assertTrue(SettingsForm.parse("5000", emptySet(), UpdateChannel.Stable, "12", "", true) is SettingsForm.ParseResult.Invalid)
+        assertTrue(SettingsForm.parse("5000", emptySet(), UpdateChannel.Beta, "12ab", "1234", false) is SettingsForm.ParseResult.Invalid)
     }
 
-    private fun ok(goal: String, pinText: String, existingPin: String): SettingsForm.Parsed {
+    @Test
+    fun screenOffWhenIdleIsSavedWithTheForm() {
+        assertTrue(ok("5000", pinText = "", existingPin = "").screenOffWhenIdle)
+        assertFalse(ok("5000", pinText = "", existingPin = "", screenOffWhenIdle = false).screenOffWhenIdle)
+    }
+
+    private fun ok(
+        goal: String,
+        pinText: String,
+        existingPin: String,
+        screenOffWhenIdle: Boolean = true,
+    ): SettingsForm.Parsed {
         val result = SettingsForm.parse(
             monthlyGoalText = goal,
             disabledAppPackages = setOf("com.example"),
             updateChannel = UpdateChannel.Stable,
             pinText = pinText,
             existingPin = existingPin,
+            screenOffWhenIdle = screenOffWhenIdle,
         )
         assertTrue(result is SettingsForm.ParseResult.Ok)
         return (result as SettingsForm.ParseResult.Ok).parsed

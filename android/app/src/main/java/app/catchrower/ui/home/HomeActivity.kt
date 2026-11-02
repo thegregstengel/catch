@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,12 +29,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import app.catchrower.data.HouseholdGate
 import app.catchrower.ui.CatchDestination
 import app.catchrower.ui.CatchViewModel
 import app.catchrower.ui.challenges.ChallengesScreen
 import app.catchrower.ui.dashboard.DashboardScreen
 import app.catchrower.ui.dashboard.SessionSummaryDialog
+import app.catchrower.ui.idle.IdleCover
+import app.catchrower.ui.idle.IdleTimeout
+import app.catchrower.ui.idle.IdleWindow
+import app.catchrower.ui.idle.ScreenIdle
 import app.catchrower.ui.profile.AddProfileDialog
 import app.catchrower.ui.profile.BtDevicePickerDialog
 import app.catchrower.ui.profile.ProfilePickerScreen
@@ -45,13 +53,20 @@ import app.catchrower.ui.theme.CatchTheme
 import app.catchrower.util.AuroraStore
 import app.catchrower.update.UpdateState
 import app.catchrower.util.SystemSettings
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class HomeActivity : ComponentActivity() {
     private val viewModel: CatchViewModel by viewModels()
+    private val screenIdle = ScreenIdle()
+    private val screenOff = mutableStateOf(false)
 
     private val userPresentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_USER_PRESENT) {
+                // Power button, or Android's own screen timeout. The idle cover
+                // wakes through wakeFromCover() so a workout stays put.
                 viewModel.onUserPresent()
             }
         }
@@ -73,6 +88,7 @@ class HomeActivity : ComponentActivity() {
         // Stay on Theme.Catch.Splash (sunset windowBackground) until Compose paints
         // the real UI — avoids black-logo ↔ loading splash ping-pong after bootanim.
         super.onCreate(savedInstanceState)
+        screenIdle.resetClock(SystemClock.elapsedRealtime())
         // Transparent system bars; dark-scrim style keeps back/home icons light (white).
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
@@ -98,6 +114,15 @@ class HomeActivity : ComponentActivity() {
             registerReceiver(packageChangeReceiver, pkgFilter)
         }
         setContent {
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val off by screenOff
+            SideEffect {
+                IdleWindow.apply(
+                    window = window,
+                    blanked = off,
+                    keepAwake = IdleTimeout.isEnabled(state.settings?.screenOffWhenIdle),
+                )
+            }
             CatchTheme {
                 CatchRoot(
                     viewModel = viewModel,
@@ -106,6 +131,30 @@ class HomeActivity : ComponentActivity() {
                     onOpenWifi = { SystemSettings.openWifi(this) },
                     onOpenAurora = { AuroraStore.openOrInstallHelp(this) },
                 )
+                if (off) {
+                    IdleCover(onWake = { wakeFromCover() })
+                }
+            }
+        }
+        lifecycleScope.launch {
+            launch {
+                viewModel.uiState.collect { state ->
+                    val rowing = screenIdle.onTelemetry(
+                        strokeCount = state.telemetry.strokeCount,
+                        nowElapsedMs = SystemClock.elapsedRealtime(),
+                    )
+                    if (rowing) refreshCover()
+                }
+            }
+            while (isActive) {
+                val state = viewModel.uiState.value
+                screenIdle.tick(
+                    nowElapsedMs = SystemClock.elapsedRealtime(),
+                    enabled = IdleTimeout.isEnabled(state.settings?.screenOffWhenIdle),
+                    hostingMedia = state.embeddedPackage != null,
+                )
+                refreshCover()
+                delay(1_000)
             }
         }
     }
@@ -113,6 +162,33 @@ class HomeActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.onResumeCatch()
+        // Coming back from another app starts the idle clock over, so Catch
+        // is visible first and only goes dark after a fresh quiet stretch.
+        noteInput()
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.action == MotionEvent.ACTION_DOWN) noteInput()
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private fun noteInput() {
+        screenIdle.onUserInput(SystemClock.elapsedRealtime())
+        refreshCover()
+    }
+
+    /** Tap on the black cover. Does not call [CatchViewModel.onUserPresent]. */
+    private fun wakeFromCover() {
+        screenIdle.onTap(
+            nowElapsedMs = SystemClock.elapsedRealtime(),
+            session = viewModel.uiState.value.telemetry.sessionPhase,
+        )
+        refreshCover()
+    }
+
+    private fun refreshCover() {
+        val visible = screenIdle.coverVisible
+        if (screenOff.value != visible) screenOff.value = visible
     }
 
     override fun onDestroy() {
@@ -122,6 +198,7 @@ class HomeActivity : ComponentActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        noteInput()
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
                 viewModel.adjustVolume(raise = true)
