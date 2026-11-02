@@ -6,6 +6,8 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.11.02]
+
 ### Added
 
 - The screen goes dark after 5 minutes when nobody is rowing or tapping.
