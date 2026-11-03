@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Lets the privileged Catch app call hidden platform APIs, including
+  PowerManager.goToSleep. Read at boot from /system/etc/sysconfig.
+-->
+<config>
+    <hidden-api-whitelisted-app package="app.catchrower.catch" />
+</config>

@@ -17,6 +17,32 @@ pm disable com.mediatek.batterywarning/.BatteryWarningActivity >/dev/null 2>&1
 settings put global force_resizable_activities 1 >/dev/null 2>&1
 settings put global enable_freeform_support 1 >/dev/null 2>&1
 
+# Tap to wake after PowerManager.goToSleep. The touchscreen has to be a kernel
+# wakeup source, or a tap never reaches Android and only the power button
+# brings the panel back. Names that do not match, and missing nodes, are skipped.
+for input in /sys/class/input/input*; do
+  [ -d "$input" ] || continue
+  [ -r "$input/name" ] || continue
+  name=$(tr '[:upper:]' '[:lower:]' < "$input/name")
+  case "$name" in
+    *touch*|*tpd*|*gt9*|*goodix*|*focal*|*ft5*|*ilitek*|*gsl*|*synaptics*|*himax*|*novatek*|*cyttsp*|*msg2*|*atmel*)
+      if [ -w "$input/power/wakeup" ]; then
+        echo enabled > "$input/power/wakeup" 2>/dev/null || true
+      fi
+      if [ -w "$input/device/power/wakeup" ]; then
+        echo enabled > "$input/device/power/wakeup" 2>/dev/null || true
+      fi
+      ;;
+  esac
+done
+for node in /sys/class/tpd/tpd_gesture /sys/class/tpd/tpd_gesture_enable; do
+  if [ -w "$node" ]; then
+    echo 1 > "$node" 2>/dev/null || true
+  fi
+done
+# Some panels wake from the platform gesture instead of a single-tap IRQ.
+settings put secure double_tap_to_wake 1 >/dev/null 2>&1 || true
+
 # SELinux. Magisk finds no preinit partition on this device, so it cannot load
 # sepolicy.rule at boot; apply the same rules live.
 magiskpolicy --live "allow priv_app ttyS_device chr_file *" >/dev/null 2>&1

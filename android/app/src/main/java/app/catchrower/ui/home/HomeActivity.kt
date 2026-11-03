@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,9 +35,9 @@ import app.catchrower.ui.CatchViewModel
 import app.catchrower.ui.challenges.ChallengesScreen
 import app.catchrower.ui.dashboard.DashboardScreen
 import app.catchrower.ui.dashboard.SessionSummaryDialog
-import app.catchrower.ui.idle.IdleCover
+import app.catchrower.ui.idle.IdleSleepFlag
 import app.catchrower.ui.idle.IdleTimeout
-import app.catchrower.ui.idle.IdleWindow
+import app.catchrower.ui.idle.PanelPower
 import app.catchrower.ui.idle.ScreenIdle
 import app.catchrower.ui.profile.AddProfileDialog
 import app.catchrower.ui.profile.BtDevicePickerDialog
@@ -57,17 +56,28 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+private const val IDLE_SLEEP_KEY = "from_idle"
+
 class HomeActivity : ComponentActivity() {
     private val viewModel: CatchViewModel by viewModels()
     private val screenIdle = ScreenIdle()
-    private val screenOff = mutableStateOf(false)
+    private val idleSleepPrefs by lazy { getSharedPreferences("catch_idle_sleep", MODE_PRIVATE) }
+    private val idleSleep by lazy {
+        IdleSleepFlag(
+            read = { idleSleepPrefs.getBoolean(IDLE_SLEEP_KEY, false) },
+            write = { sleeping ->
+                idleSleepPrefs.edit().putBoolean(IDLE_SLEEP_KEY, sleeping).commit()
+                Unit
+            },
+        )
+    }
+    private var panelWasAsleep = false
 
     private val userPresentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_USER_PRESENT) {
-                // Power button, or Android's own screen timeout. The idle cover
-                // wakes through wakeFromCover() so a workout stays put.
-                viewModel.onUserPresent()
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_ON -> syncPanel(SystemClock.elapsedRealtime())
+                Intent.ACTION_USER_PRESENT -> onDeviceWake()
             }
         }
     }
@@ -100,7 +110,13 @@ class HomeActivity : ComponentActivity() {
         }
         window.isNavigationBarContrastEnforced = false
         window.isStatusBarContrastEnforced = false
-        registerReceiver(userPresentReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
+        registerReceiver(
+            userPresentReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_USER_PRESENT)
+                addAction(Intent.ACTION_SCREEN_ON)
+            },
+        )
         val pkgFilter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -114,15 +130,6 @@ class HomeActivity : ComponentActivity() {
             registerReceiver(packageChangeReceiver, pkgFilter)
         }
         setContent {
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            val off by screenOff
-            SideEffect {
-                IdleWindow.apply(
-                    window = window,
-                    blanked = off,
-                    keepAwake = IdleTimeout.isEnabled(state.settings?.screenOffWhenIdle),
-                )
-            }
             CatchTheme {
                 CatchRoot(
                     viewModel = viewModel,
@@ -131,31 +138,62 @@ class HomeActivity : ComponentActivity() {
                     onOpenWifi = { SystemSettings.openWifi(this) },
                     onOpenAurora = { AuroraStore.openOrInstallHelp(this) },
                 )
-                if (off) {
-                    IdleCover(onWake = { wakeFromCover() })
-                }
             }
         }
         lifecycleScope.launch {
             launch {
                 viewModel.uiState.collect { state ->
-                    val rowing = screenIdle.onTelemetry(
+                    screenIdle.onTelemetry(
                         strokeCount = state.telemetry.strokeCount,
                         nowElapsedMs = SystemClock.elapsedRealtime(),
                     )
-                    if (rowing) refreshCover()
                 }
             }
             while (isActive) {
+                val now = SystemClock.elapsedRealtime()
                 val state = viewModel.uiState.value
+                syncPanel(now)
+                val enabled = IdleTimeout.isEnabled(state.settings?.screenOffWhenIdle)
+                PanelPower.keepAwakeWhileCounting(window, enabled)
                 screenIdle.tick(
-                    nowElapsedMs = SystemClock.elapsedRealtime(),
-                    enabled = IdleTimeout.isEnabled(state.settings?.screenOffWhenIdle),
+                    nowElapsedMs = now,
+                    enabled = enabled,
                     hostingMedia = state.embeddedPackage != null,
                 )
-                refreshCover()
+                if (screenIdle.readyToSleep && PanelPower.isInteractive(this@HomeActivity)) {
+                    idleSleep.markSleep()
+                    panelWasAsleep = true
+                    if (!PanelPower.goToSleep(this@HomeActivity)) {
+                        idleSleep.clear()
+                        panelWasAsleep = false
+                    }
+                }
                 delay(1_000)
             }
+        }
+    }
+
+    /**
+     * The panel just became interactive again. Restart the idle clock before the
+     * next timeout check, so waking does not immediately call [PanelPower.goToSleep].
+     */
+    private fun syncPanel(nowElapsedMs: Long) {
+        val interactive = PanelPower.isInteractive(this)
+        if (interactive && panelWasAsleep) {
+            screenIdle.onUserInput(nowElapsedMs)
+            panelWasAsleep = false
+        } else if (!interactive) {
+            panelWasAsleep = true
+        }
+    }
+
+    private fun onDeviceWake() {
+        val now = SystemClock.elapsedRealtime()
+        syncPanel(now)
+        if (idleSleep.consumeKeepSession(now)) {
+            screenIdle.onWake(now, viewModel.uiState.value.telemetry.sessionPhase)
+        } else {
+            viewModel.onUserPresent()
         }
     }
 
@@ -163,7 +201,7 @@ class HomeActivity : ComponentActivity() {
         super.onResume()
         viewModel.onResumeCatch()
         // Coming back from another app starts the idle clock over, so Catch
-        // is visible first and only goes dark after a fresh quiet stretch.
+        // is visible first and only sleeps after a fresh quiet stretch.
         noteInput()
     }
 
@@ -174,21 +212,6 @@ class HomeActivity : ComponentActivity() {
 
     private fun noteInput() {
         screenIdle.onUserInput(SystemClock.elapsedRealtime())
-        refreshCover()
-    }
-
-    /** Tap on the black cover. Does not call [CatchViewModel.onUserPresent]. */
-    private fun wakeFromCover() {
-        screenIdle.onTap(
-            nowElapsedMs = SystemClock.elapsedRealtime(),
-            session = viewModel.uiState.value.telemetry.sessionPhase,
-        )
-        refreshCover()
-    }
-
-    private fun refreshCover() {
-        val visible = screenIdle.coverVisible
-        if (screenOff.value != visible) screenOff.value = visible
     }
 
     override fun onDestroy() {

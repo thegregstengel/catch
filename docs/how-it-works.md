@@ -92,8 +92,9 @@ The module source is in [`magisk/`](../magisk), and
 | Piece | What it does |
 | --- | --- |
 | `system/priv-app/Catch` | Installs Catch as a privileged system app. |
-| `system/etc/permissions` | Allowlists Catch's privileged permission (`INSTALL_PACKAGES`). |
-| `service.sh` | Sets Catch as Home, disables the stock Hydrow launcher, applies the SELinux rules live, grants the serial port, and keeps the media pane host running. |
+| `system/etc/permissions` | Allowlists Catch's privileged permissions (`INSTALL_PACKAGES`, `DEVICE_POWER`). |
+| `system/etc/sysconfig` | Lets Catch call the hidden `PowerManager.goToSleep`. |
+| `service.sh` | Sets Catch as Home, disables the stock Hydrow launcher, applies the SELinux rules live, grants the serial port, enables tap-to-wake, and keeps the media pane host running. |
 | `sepolicy.rule` | The same SELinux rules, for devices where Magisk can load them at boot. |
 | `system/media/bootanimation.zip` | The Catch boot animation. |
 | `overlays/fallback-home` | Paints the screen at the end of boot black instead of the stock loading screen. |

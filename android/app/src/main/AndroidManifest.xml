@@ -11,6 +11,9 @@
     <!-- Silent self-update; granted by the Magisk module's privapp allowlist. -->
     <uses-permission android:name="android.permission.INSTALL_PACKAGES"
         tools:ignore="ProtectedPermissions" />
+    <!-- Panel sleep. Allowlisted in the module before this app requests it. -->
+    <uses-permission android:name="android.permission.DEVICE_POWER"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application

@@ -2,11 +2,12 @@
 <!--
   Privileged permissions for Catch. This device enforces the allowlist
   (ro.control_privapp_permissions=enforce): a privileged permission that Catch
-  requests but that is missing here stops the device from booting. Ship any new
-  entry in a module release before an app release that requests it.
+  requests but that is missing here stops the device from booting. Install this
+  module, including any new entry, before an app build that requests it.
 -->
 <permissions>
     <privapp-permissions package="app.catchrower.catch">
         <permission name="android.permission.INSTALL_PACKAGES" />
+        <permission name="android.permission.DEVICE_POWER" />
     </privapp-permissions>
 </permissions>

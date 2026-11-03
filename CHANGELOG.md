@@ -6,6 +6,13 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Module update required.** After 5 minutes with nobody rowing or tapping,
+  the screen turns off. Tap it to wake the panel. A workout in progress stays
+  as it was, and Catch does not open "Who is rowing?". Install this module
+  before the app so `DEVICE_POWER` is allowlisted before Catch requests it.
+
 ## [2026.11.02]
 
 ### Added

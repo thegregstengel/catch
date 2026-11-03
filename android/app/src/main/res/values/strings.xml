@@ -34,8 +34,7 @@
     <string name="settings_apps">App grid</string>
     <string name="settings_home">Home and apps</string>
     <string name="settings_screen_off">Turn the screen off when idle</string>
-    <string name="settings_screen_off_body">After %1$d minutes with no rowing and no taps, the screen goes dark. A show in the pane keeps it on. Tap to wake it. Catch stays where you left it.</string>
-    <string name="screen_off_wake">Screen is off. Tap to wake.</string>
+    <string name="settings_screen_off_body">After %1$d minutes with no rowing and no taps, the screen turns off. A show in the pane keeps it on. Tap the screen to wake it. Catch stays where you left it.</string>
     <string name="session_goal_title">Session distance</string>
     <string name="session_goal_body">How far do you want to row this session?</string>
     <string name="session_goal_row">Row</string>
