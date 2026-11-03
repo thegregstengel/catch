@@ -45,6 +45,9 @@ jobs:
           fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           if [[ "$NAME" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          # Tablets on 2026.11.02 and earlier install the highest stable version
+          # they can parse. Reject anything they would prefer over the safety release.
+          sh scripts/reject-newer-than-safety.sh "$NAME"
 
       - name: Decode signing key
         env:

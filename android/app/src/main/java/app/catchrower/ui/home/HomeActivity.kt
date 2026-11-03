@@ -247,6 +247,7 @@ private fun CatchRoot(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val updateChannel by viewModel.updateChannel.collectAsStateWithLifecycle()
+    val sideloadRequired by viewModel.sideloadRequired.collectAsStateWithLifecycle()
     var pinPrompt by remember { mutableStateOf<((String) -> Boolean)?>(null) }
 
     fun gate(action: HouseholdGate.Action, onGranted: (String?) -> Unit) {
@@ -286,7 +287,11 @@ private fun CatchRoot(
                 gate(HouseholdGate.Action.OpenCatchSettings) { pin -> viewModel.openCatchSettings(pin) }
             },
             onSystemSettings = onOpenSettings,
-            availableUpdate = (updateState as? UpdateState.Available)?.release?.version,
+            availableUpdate = if (sideloadRequired) {
+                null
+            } else {
+                (updateState as? UpdateState.Available)?.release?.version
+            },
         )
         CatchDestination.Dashboard -> DashboardScreen(
             state = state,
@@ -330,6 +335,7 @@ private fun CatchRoot(
             onSystemSettings = onOpenSettings,
             updateState = updateState,
             updateChannel = updateChannel,
+            sideloadRequired = sideloadRequired,
             onCheckUpdate = { viewModel.checkForUpdate() },
             onInstallUpdate = viewModel::installUpdate,
             onExportJson = { viewModel.exportWorkouts("json") },
