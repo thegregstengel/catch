@@ -310,11 +310,11 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Android delivered [android.content.Intent.ACTION_USER_PRESENT]: the power
-     * button, or the system screen timeout. That returns to "Who is rowing?"
-     * and ends the workout. The idle cover must not call this. A tap on that
-     * cover wakes through [app.catchrower.ui.idle.ScreenIdle.onTap] and leaves
-     * the session where it was.
+     * Android delivered [android.content.Intent.ACTION_USER_PRESENT] for a wake
+     * Catch did not start, such as the power button. That returns to "Who is
+     * rowing?" and ends the workout. A tap after idle [android.os.PowerManager.goToSleep]
+     * must not call this. [app.catchrower.ui.idle.IdleSleepFlag] sends that wake
+     * through [app.catchrower.ui.idle.ScreenIdle.onWake] instead.
      */
     fun onUserPresent() {
         viewModelScope.launch {
