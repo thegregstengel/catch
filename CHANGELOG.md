@@ -6,12 +6,15 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.11.03]
+
 ### Fixed
 
-- **Module update required.** After 5 minutes with nobody rowing or tapping,
-  the screen turns off. Tap it to wake the panel. A workout in progress stays
-  as it was, and Catch does not open "Who is rowing?". Install this module
-  before the app so `DEVICE_POWER` is allowlisted before Catch requests it.
+- **Module update required.** Install the Magisk zip and reboot before
+  installing the APK, or the tablet will not boot. After 5 minutes with
+  nobody rowing or tapping, the screen turns off. Tap it to wake the panel.
+  A workout in progress stays as it was, and Catch does not open "Who is
+  rowing?".
 
 ## [2026.11.02]
 
