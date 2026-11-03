@@ -11,9 +11,11 @@
     <!-- Silent self-update; granted by the Magisk module's privapp allowlist. -->
     <uses-permission android:name="android.permission.INSTALL_PACKAGES"
         tools:ignore="ProtectedPermissions" />
-    <!-- Panel sleep. Allowlisted in the module before this app requests it. -->
-    <uses-permission android:name="android.permission.DEVICE_POWER"
-        tools:ignore="ProtectedPermissions" />
+    <!--
+      This safety build does not request android.permission.DEVICE_POWER.
+      Tablets still on the previous module install this APK from Catch Settings.
+      Requesting that permission here would stop those tablets from booting.
+    -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application

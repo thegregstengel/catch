@@ -9,9 +9,9 @@ import android.view.WindowManager
 /**
  * Turns the Hydrow panel off with [PowerManager.goToSleep].
  *
- * `goToSleep` is a hidden API and needs [PERMISSION]. The Magisk module
- * allowlists that permission and whitelists Catch for hidden APIs. Both have
- * to be on the tablet before an app build that requests the permission, or
+ * `goToSleep` is a hidden API and needs [PERMISSION]. This safety build does
+ * not request it, so the call fails closed and the panel stays up. The Magisk
+ * module has to allowlist the permission before a later app requests it, or
  * the next boot stops.
  *
  * [keepAwakeWhileCounting] holds the panel during the idle countdown so

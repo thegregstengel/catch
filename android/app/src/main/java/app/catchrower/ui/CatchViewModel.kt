@@ -1,7 +1,9 @@
 package app.catchrower.ui
 
 import android.app.Application
+import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.catchrower.data.CatchRepository
@@ -26,6 +28,7 @@ import app.catchrower.rower.RowerHalFactory
 import app.catchrower.rower.RowerTelemetry
 import app.catchrower.rower.SessionPhase
 import app.catchrower.BuildConfig
+import app.catchrower.update.ModuleSideload
 import app.catchrower.update.UpdateChannel
 import app.catchrower.update.UpdateChecker
 import app.catchrower.update.UpdateInstaller
@@ -141,6 +144,8 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     private val updatePrefs = UpdatePrefs(app)
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
+    private val _sideloadRequired = MutableStateFlow(false)
+    val sideloadRequired: StateFlow<Boolean> = _sideloadRequired.asStateFlow()
     private val _updateChannel = MutableStateFlow(updatePrefs.channel)
     val updateChannel: StateFlow<UpdateChannel> = _updateChannel.asStateFlow()
 
@@ -225,6 +230,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     init {
         refreshInstalledApps()
         noteUpdateCompleted()
+        refreshSideload()
         viewModelScope.launch {
             UpdateInstaller.failure.collect { message ->
                 val current = _updateState.value
@@ -577,6 +583,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
 
     fun onResumeCatch() {
         refreshInstalledApps()
+        refreshSideload()
         checkForUpdateIfDue()
         publishYearInReview()
     }
@@ -699,6 +706,7 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
 
     fun checkForUpdate(quiet: Boolean = false) {
         viewModelScope.launch {
+            val held = refreshSideload()
             if (!quiet) {
                 updatePrefs.updatedTo = null
                 _updateState.value = UpdateState.Checking
@@ -709,13 +717,19 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
                     onSuccess = { release ->
                         updatePrefs.lastCheckEpochMs = System.currentTimeMillis()
                         when {
+                            held || (release != null && ModuleSideload.notesRequireModule(release.notes)) ->
+                                UpdateState.SideloadRequired
                             release != null -> UpdateState.Available(release)
                             quiet -> before.takeIf { it is UpdateState.Updated } ?: UpdateState.Idle
                             else -> UpdateState.UpToDate
                         }
                     },
                     onFailure = {
-                        if (quiet) before else UpdateState.Failed("Could not reach GitHub. Check the Wi-Fi connection.")
+                        when {
+                            held -> UpdateState.SideloadRequired
+                            quiet -> before
+                            else -> UpdateState.Failed("Could not reach GitHub. Check the Wi-Fi connection.")
+                        }
                     },
                 )
         }
@@ -729,10 +743,15 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun installUpdate() {
+        if (_sideloadRequired.value) return
         val release = when (val state = _updateState.value) {
             is UpdateState.Available -> state.release
             is UpdateState.Failed -> state.release ?: return
             else -> return
+        }
+        if (ModuleSideload.notesRequireModule(release.notes)) {
+            _updateState.value = UpdateState.SideloadRequired
+            return
         }
         viewModelScope.launch {
             val app = getApplication<Application>()
@@ -747,6 +766,43 @@ class CatchViewModel(app: Application) : AndroidViewModel(app) {
                 _updateState.value = UpdateState.Failed(e.message ?: "The update failed.", release)
             }
         }
+    }
+
+    /**
+     * True until the mounted allowlist contains [ModuleSideload.PERMISSION] and this
+     * app requests it. Reading the file again is what clears the hold. There is no dismiss.
+     */
+    private fun refreshSideload(): Boolean {
+        val held = ModuleSideload.holdsBackInAppInstall(
+            ModuleSideload.permissionsNamedIn(readAllowlist()),
+            requestedPermissions(),
+        )
+        _sideloadRequired.value = held
+        val state = _updateState.value
+        val busy = state is UpdateState.Checking ||
+            state is UpdateState.Downloading ||
+            state is UpdateState.Installing
+        if (held && !busy) _updateState.value = UpdateState.SideloadRequired
+        return held
+    }
+
+    private fun readAllowlist(): String {
+        val file = File("/system/etc/permissions/privapp-permissions-catch.xml")
+        return if (file.canRead()) file.readText() else ""
+    }
+
+    private fun requestedPermissions(): Set<String> {
+        val app = getApplication<Application>()
+        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            app.packageManager.getPackageInfo(
+                app.packageName,
+                PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong()),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            app.packageManager.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS)
+        }
+        return info.requestedPermissions?.toSet().orEmpty()
     }
 
     private fun noteUpdateCompleted() {

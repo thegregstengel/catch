@@ -6,6 +6,15 @@ the section that matches the tag as the release notes.
 
 ## [Unreleased]
 
+## [2026.11.03.2]
+
+### Changed
+
+- Catch Settings still checks for updates. It does not offer Install update.
+  The next Catch update changes the Magisk module. Installing an APK from
+  this screen can stop the tablet from booting. Download the Magisk zip from
+  the v2026.11.03 release page, install it, reboot, then install the APK.
+
 ## [2026.11.03]
 
 ### Fixed

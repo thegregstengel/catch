@@ -62,6 +62,33 @@ class UpdateCheckerTest {
     }
 
     @Test
+    fun stableChannelOffersTheSafetyReleaseAndNothingPastIt() {
+        val published = releases(
+            release("v2026.11.03", prerelease = true),
+            release("v2026.11.03.2"),
+            release("v2026.11.02"),
+        )
+        assertEquals("2026.11.03.2", UpdateChecker.pick(published, UpdateChannel.Stable, "2026.11.02")?.version)
+        assertEquals("2026.11.03.2", UpdateChecker.pick(published, UpdateChannel.Beta, "2026.11.02")?.version)
+        assertNull(UpdateChecker.pick(published, UpdateChannel.Stable, "2026.11.03.2"))
+    }
+
+    @Test
+    fun aLaterStableCannotSkipTheSafetyRelease() {
+        val skipped = releases(release("v2026.11.03.2"), release("v2026.11.04"))
+        assertEquals("2026.11.03.2", UpdateChecker.pick(skipped, UpdateChannel.Stable, "2026.11.02")?.version)
+        assertNull(UpdateChecker.pick(releases(release("v2026.11.04")), UpdateChannel.Stable, "2026.11.02"))
+        assertEquals(261103299, Version.code("2026.11.03.2"))
+        assertTrue(SafetyRelease.outranks("2026.11.04"))
+        assertTrue(SafetyRelease.outranks("2026.11.04-beta.1"))
+        assertTrue(SafetyRelease.outranks("2026.11.03.3"))
+        assertFalse(SafetyRelease.outranks("2026.11.03.2"))
+        assertFalse(SafetyRelease.outranks("2026.11.03"))
+        assertFalse(SafetyRelease.outranks("2026.11.02"))
+        assertFalse(SafetyRelease.outranks("not-a-version"))
+    }
+
+    @Test
     fun parsesSha256SumsFile() {
         val sums = "$sha  catch-2026.10.29.apk\n${"b".repeat(64)} *catch-magisk-2026.10.29.zip\n"
         assertEquals(sha, UpdateChecker.checksumFrom(sums, "catch-2026.10.29.apk"))
