@@ -1,3 +1,15 @@
+> [!WARNING]
+> **Catch 2026.11.03 changes the Magisk module.** Do not install that APK from
+> Catch Settings. Doing so before the new module can stop the tablet from
+> booting.
+>
+> Install
+> [catch-magisk-2026.11.03.zip](https://github.com/thegregstengel/catch/releases/tag/v2026.11.03),
+> reboot, then install the app. The files are on that release page.
+>
+> That release is a prerelease, so the in-app updater on older builds will not
+> offer it. A following stable update will explain this on the tablet.
+
 <p align="center">
   <img src="docs/images/catch-logo.png" alt="Catch" width="240">
 </p>
