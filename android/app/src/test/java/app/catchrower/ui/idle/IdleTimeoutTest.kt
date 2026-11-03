@@ -203,7 +203,10 @@ class IdleTimeoutTest {
         val service = File(root, "magisk/service.sh").readText()
         assertTrue(allowlist.contains("android.permission.DEVICE_POWER"))
         assertTrue(allowlist.contains("android.permission.INSTALL_PACKAGES"))
-        assertTrue(manifest.contains("android.permission.DEVICE_POWER"))
+        assertFalse(
+            "This safety build must not request DEVICE_POWER. Tablets install it with the old module.",
+            manifest.contains("""uses-permission android:name="android.permission.DEVICE_POWER""""),
+        )
         assertTrue(hidden.contains("hidden-api-whitelisted-app"))
         assertTrue(hidden.contains("app.catchrower.catch"))
         assertTrue(service.contains("power/wakeup"))

@@ -20,6 +20,7 @@ import app.catchrower.BuildConfig
 import app.catchrower.ui.components.GlassPanel
 import app.catchrower.ui.theme.CatchAccent
 import app.catchrower.ui.theme.CatchTextSecondary
+import app.catchrower.update.ModuleSideload
 import app.catchrower.update.UpdateChannel
 import app.catchrower.update.UpdateState
 
@@ -27,6 +28,7 @@ import app.catchrower.update.UpdateState
 fun UpdatesPanel(
     state: UpdateState,
     channel: UpdateChannel,
+    sideloadRequired: Boolean,
     onCheck: () -> Unit,
     onInstall: () -> Unit,
     onChannel: (UpdateChannel) -> Unit,
@@ -59,12 +61,21 @@ fun UpdatesPanel(
                 )
             }
 
+            val showSideload = sideloadRequired || state is UpdateState.SideloadRequired
+            if (showSideload) {
+                Text(ModuleSideload.MESSAGE, color = CatchTextSecondary)
+                Text(ModuleSideload.RELEASE_PAGE, color = CatchAccent)
+            }
+
             when (state) {
                 UpdateState.Idle -> Unit
+                UpdateState.SideloadRequired -> Unit
                 UpdateState.Checking -> Text("Checking for updates...", color = CatchTextSecondary)
-                UpdateState.UpToDate -> Text("Catch is up to date.", color = CatchAccent)
+                UpdateState.UpToDate -> if (!showSideload) Text("Catch is up to date.", color = CatchAccent)
                 is UpdateState.Updated -> Text("Updated to ${state.version}.", color = CatchAccent)
-                is UpdateState.Available -> ReleaseSummary("Catch ${state.release.version} is available.", state.release.notes)
+                is UpdateState.Available -> if (!showSideload) {
+                    ReleaseSummary("Catch ${state.release.version} is available.", state.release.notes)
+                }
                 is UpdateState.Downloading -> {
                     Text("Downloading Catch ${state.release.version}...", color = CatchTextSecondary)
                     LinearProgressIndicator(
@@ -81,8 +92,8 @@ fun UpdatesPanel(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val canInstall = state is UpdateState.Available ||
-                    (state is UpdateState.Failed && state.release != null)
+                val canInstall = !showSideload && (state is UpdateState.Available ||
+                    (state is UpdateState.Failed && state.release != null))
                 val busy = state is UpdateState.Checking ||
                     state is UpdateState.Downloading ||
                     state is UpdateState.Installing

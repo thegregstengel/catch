@@ -64,6 +64,7 @@ fun CatchSettingsScreen(
     onSystemSettings: () -> Unit,
     updateState: UpdateState,
     updateChannel: UpdateChannel,
+    sideloadRequired: Boolean,
     onCheckUpdate: () -> Unit,
     onInstallUpdate: () -> Unit,
     onExportJson: () -> Unit,
@@ -349,6 +350,7 @@ fun CatchSettingsScreen(
             UpdatesPanel(
                 state = updateState,
                 channel = channel,
+                sideloadRequired = sideloadRequired,
                 onCheck = onCheckUpdate,
                 onInstall = onInstallUpdate,
                 onChannel = { channel = it },

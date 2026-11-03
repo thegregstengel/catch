@@ -61,6 +61,13 @@ to it directly or force-push it.
    git push origin v2026.10.29
    ```
 
+Tablets on `2026.11.02` and earlier install the highest stable version they
+can parse. `2026.11.03.2` is that version. Do not tag a stable release or a
+pre-release that sorts above it. The release workflow rejects the tag. A higher
+version would let those tablets skip `2026.11.03.2` and install an APK that
+asks for a permission the old module has not allowlisted. `v2026.11.03` stays
+a pre-release, so the stable channel does not offer it.
+
 The [Release workflow](../.github/workflows/release.yml) then does the following:
 
 1. Runs the unit tests and lint, and builds the signed release APK with the

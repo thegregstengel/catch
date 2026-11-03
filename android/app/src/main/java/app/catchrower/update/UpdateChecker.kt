@@ -37,15 +37,25 @@ object UpdateChecker {
 
     internal fun pick(releasesJson: String, channel: UpdateChannel, currentVersion: String): Release? {
         val releases = JSONArray(releasesJson)
-        val newest = (0 until releases.length())
+        val eligible = (0 until releases.length())
             .map { releases.getJSONObject(it) }
             .filter { !it.optBoolean("draft") }
             .filter { channel == UpdateChannel.Beta || !it.optBoolean("prerelease") }
-            .maxByOrNull { Version.code(it.optString("tag_name")) ?: -1 }
-            ?: return null
-        val version = newest.optString("tag_name").removePrefix("v")
+        if (eligible.isEmpty()) return null
+        val ranked = eligible.map { it to (Version.code(it.optString("tag_name")) ?: -1) }
+        var best = ranked.maxBy { it.second }
+        val safety = Version.code(SafetyRelease.VERSION)
+        val current = Version.code(currentVersion)
+        // A tablet still on an older build must not be offered anything past the
+        // safety release. If that release is absent, offer nothing rather than
+        // the later APK.
+        if (safety != null && current != null && current < safety && best.second > safety) {
+            best = ranked.firstOrNull { it.second == safety } ?: return null
+        }
+        if (best.second < 0) return null
+        val version = best.first.optString("tag_name").removePrefix("v")
         if (!Version.isNewer(version, currentVersion)) return null
-        return toRelease(newest, version)
+        return toRelease(best.first, version)
     }
 
     private fun toRelease(json: JSONObject, version: String): Release? {
